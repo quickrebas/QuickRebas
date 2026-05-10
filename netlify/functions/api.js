@@ -1,14 +1,9 @@
-// netlify/functions/api.js
-// QuickRebas backend — runs on Netlify's servers, no Google needed
-// Uses Netlify Blobs as the database (built-in, free)
+// QuickRebas Backend — Zero external dependencies
+// Uses Netlify Blobs native REST API (no npm packages needed)
 
-const { getStore } = require('@netlify/blobs');
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-function resp(data, status) {
+function ok(data) {
   return {
-    statusCode: status || 200,
+    statusCode: 200,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
@@ -19,247 +14,177 @@ function resp(data, status) {
   };
 }
 
-function randChars(n) {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let out = '';
-  for (let i = 0; i < n; i++) {
+function rand(n) {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var out = '';
+  for (var i = 0; i < n; i++) {
     out += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return out;
 }
 
 function makeCode(book) {
-  return `QR-${book.toUpperCase()}-${randChars(4)}-${randChars(4)}`;
+  return 'QR-' + book.toUpperCase() + '-' + rand(4) + '-' + rand(4);
 }
 
-function addMonths(date, n) {
-  const d = new Date(date);
+function fmtDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  } catch(e) { return iso; }
+}
+
+function addMonths(n) {
+  var d = new Date();
   d.setMonth(d.getMonth() + n);
   return d.toISOString();
 }
 
-function fmtDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+// Netlify Blobs REST API — uses env vars Netlify injects automatically
+async function bGet(store, key) {
+  var siteId = process.env.NETLIFY_SITE_ID;
+  var token  = process.env.NETLIFY_BLOBS_TOKEN;
+  if (!siteId || !token) return null;
+  try {
+    var r = await fetch('https://blobs.netlify.com/' + siteId + '/' + store + '/' + encodeURIComponent(key), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (r.status === 404) return null;
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
 }
 
-// ── main handler ─────────────────────────────────────────────────────────────
+async function bSet(store, key, val) {
+  var siteId = process.env.NETLIFY_SITE_ID;
+  var token  = process.env.NETLIFY_BLOBS_TOKEN;
+  if (!siteId || !token) return false;
+  try {
+    var r = await fetch('https://blobs.netlify.com/' + siteId + '/' + store + '/' + encodeURIComponent(key), {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(val),
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+async function bList(store) {
+  var siteId = process.env.NETLIFY_SITE_ID;
+  var token  = process.env.NETLIFY_BLOBS_TOKEN;
+  if (!siteId || !token) return [];
+  try {
+    var r = await fetch('https://blobs.netlify.com/' + siteId + '/' + store + '/', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!r.ok) return [];
+    var d = await r.json();
+    return d.blobs || d.keys || [];
+  } catch(e) { return []; }
+}
 
 exports.handler = async function(event) {
+  if (event.httpMethod === 'OPTIONS') return ok({ ok: true });
 
-  // Handle CORS preflight
-  if (event.httpMethod === 'OPTIONS') {
-    return resp({ ok: true });
-  }
+  var params = event.queryStringParameters || {};
+  var action = params.action || '';
+  var body   = {};
+  if (event.body) { try { body = JSON.parse(event.body); } catch(e) {} }
 
-  const method = event.httpMethod;
-  const params = event.queryStringParameters || {};
-  const action = params.action || '';
+  var PASS = process.env.ADMIN_PASS || 'quickrebas2025';
 
-  // Parse body for POST requests
-  let body = {};
-  if (method === 'POST' && event.body) {
-    try { body = JSON.parse(event.body); } catch(e) {}
-  }
-
-  // ── database stores ──
-  const codesStore    = getStore('codes');
-  const studentsStore = getStore('students');
-
-  // ════════════════════════════════════════════════════════
-  //  GENERATE CODES
-  //  POST /api?action=generate
-  //  body: { book, qty, adminPass }
-  // ════════════════════════════════════════════════════════
+  // GENERATE
   if (action === 'generate') {
-    const adminPass = await codesStore.get('__admin_pass') || 'quickrebas2025';
-    if (body.adminPass !== adminPass) {
-      return resp({ status: 'error', message: 'Wrong admin password' }, 401);
+    if (body.adminPass !== PASS) return ok({ status: 'error', message: 'Wrong password' });
+    var book  = (body.book || 'A0').toUpperCase();
+    var qty   = Math.min(parseInt(body.qty) || 10, 500);
+    var codes = [];
+    var now   = new Date().toISOString();
+    for (var i = 0; i < qty; i++) {
+      var code = makeCode(book);
+      await bSet('codes', code, { code:code, book:book, status:'unused', createdAt:now });
+      codes.push(code);
     }
-
-    const book = (body.book || 'A0').toUpperCase();
-    const qty  = Math.min(parseInt(body.qty) || 10, 500);
-    const now  = new Date().toISOString();
-    const generated = [];
-
-    for (let i = 0; i < qty; i++) {
-      const code = makeCode(book);
-      const entry = { code, book, status: 'unused', createdAt: now };
-      await codesStore.setJSON(code, entry);
-      generated.push(code);
-    }
-
-    return resp({ status: 'ok', codes: generated, count: generated.length });
+    return ok({ status:'ok', codes:codes, count:codes.length });
   }
 
-  // ════════════════════════════════════════════════════════
-  //  VERIFY CODE
-  //  GET /api?action=verify&code=QR-A0-XXXX-XXXX
-  // ════════════════════════════════════════════════════════
+  // VERIFY
   if (action === 'verify') {
-    const code = params.code;
-    if (!code) return resp({ status: 'invalid' });
-
-    const entry = await codesStore.get(code, { type: 'json' });
-    if (!entry)                        return resp({ status: 'invalid' });
-    if (entry.status === 'active')     return resp({ status: 'used' });
-    if (entry.status === 'revoked')    return resp({ status: 'invalid' });
-
-    return resp({
-      status: 'valid',
-      book:   'QuickRebas ' + entry.book,
-      level:  entry.book.toLowerCase(),
-    });
+    var code  = params.code;
+    if (!code) return ok({ status:'invalid' });
+    var entry = await bGet('codes', code);
+    if (!entry)                     return ok({ status:'invalid' });
+    if (entry.status === 'active')  return ok({ status:'used' });
+    if (entry.status === 'revoked') return ok({ status:'invalid' });
+    return ok({ status:'valid', book:'QuickRebas '+entry.book, level:entry.book.toLowerCase() });
   }
 
-  // ════════════════════════════════════════════════════════
-  //  ACTIVATE CODE
-  //  POST /api?action=activate
-  //  body: { code, name, email, password }
-  // ════════════════════════════════════════════════════════
+  // ACTIVATE
   if (action === 'activate') {
-    const { code, name, email, password } = body;
-    if (!code || !name || !email || !password) {
-      return resp({ status: 'error', message: 'Missing fields' });
-    }
-
-    const entry = await codesStore.get(code, { type: 'json' });
-    if (!entry || entry.status !== 'unused') {
-      return resp({ status: 'error', message: 'Code is not valid or already used' });
-    }
-
-    const now    = new Date().toISOString();
-    const expiry = addMonths(now, 6);
-
-    // Update code entry
-    entry.status      = 'active';
-    entry.studentName = name;
-    entry.email       = email;
-    entry.activatedAt = now;
-    entry.expiresAt   = expiry;
-    await codesStore.setJSON(code, entry);
-
-    // Save student record (keyed by email)
-    const student = { name, email, book: entry.book, level: entry.book.toLowerCase(), code, activatedAt: now, expiresAt: expiry };
-    await studentsStore.setJSON(email, student);
-
-    return resp({ status: 'ok', expiry, book: 'QuickRebas ' + entry.book, level: entry.book.toLowerCase() });
+    var code  = body.code;
+    var name  = body.name;
+    var email = body.email;
+    if (!code||!name||!email) return ok({ status:'error', message:'Missing fields' });
+    var entry = await bGet('codes', code);
+    if (!entry || entry.status !== 'unused') return ok({ status:'error', message:'Code not valid or already used' });
+    var now    = new Date().toISOString();
+    var expiry = addMonths(6);
+    entry.status='active'; entry.studentName=name; entry.email=email;
+    entry.activatedAt=now; entry.expiresAt=expiry;
+    await bSet('codes', code, entry);
+    await bSet('students', email, { name:name, email:email, book:entry.book, level:entry.book.toLowerCase(), code:code, activatedAt:now, expiresAt:expiry });
+    return ok({ status:'ok', expiry:expiry, book:'QuickRebas '+entry.book, level:entry.book.toLowerCase() });
   }
 
-  // ════════════════════════════════════════════════════════
-  //  SIGN IN (student login)
-  //  POST /api?action=signin
-  //  body: { email, password }
-  // ════════════════════════════════════════════════════════
+  // SIGNIN
   if (action === 'signin') {
-    const { email, password } = body;
-    const student = await studentsStore.get(email, { type: 'json' });
-    if (!student) return resp({ status: 'error', message: 'No account found for this email' });
-
-    // Check expiry
-    if (new Date(student.expiresAt) < new Date()) {
-      return resp({ status: 'error', message: 'Your access has expired. Please purchase a new workbook.' });
-    }
-
-    // Re-verify code still active
-    const codeEntry = await codesStore.get(student.code, { type: 'json' });
-    if (!codeEntry || codeEntry.status === 'revoked') {
-      return resp({ status: 'error', message: 'Access has been revoked. Please contact your teacher.' });
-    }
-
-    return resp({ status: 'ok', student });
+    var student = await bGet('students', body.email);
+    if (!student) return ok({ status:'error', message:'No account found for this email' });
+    if (new Date(student.expiresAt) < new Date()) return ok({ status:'error', message:'Access expired. Please purchase a new workbook.' });
+    var ce = await bGet('codes', student.code);
+    if (!ce || ce.status === 'revoked') return ok({ status:'error', message:'Access revoked. Contact your teacher.' });
+    return ok({ status:'ok', student:student });
   }
 
-  // ════════════════════════════════════════════════════════
-  //  LIST CODES (admin)
-  //  GET /api?action=listCodes&adminPass=xxx
-  // ════════════════════════════════════════════════════════
+  // LIST CODES
   if (action === 'listCodes') {
-    const adminPass = await codesStore.get('__admin_pass') || 'quickrebas2025';
-    if (params.adminPass !== adminPass) {
-      return resp({ status: 'error', message: 'Wrong admin password' }, 401);
-    }
-
-    const { blobs } = await codesStore.list();
-    const codes = [];
-    const now   = new Date();
-
-    for (const blob of blobs) {
-      if (blob.key.startsWith('__')) continue; // skip internal keys
-      const entry = await codesStore.get(blob.key, { type: 'json' });
+    if (params.adminPass !== PASS) return ok({ status:'error', message:'Wrong password' });
+    var blobs = await bList('codes');
+    var codes = [];
+    var now   = new Date();
+    for (var i = 0; i < blobs.length; i++) {
+      var key   = blobs[i].key || blobs[i];
+      var entry = await bGet('codes', key);
       if (!entry) continue;
-
-      // Auto-expire
       if (entry.status === 'active' && entry.expiresAt && new Date(entry.expiresAt) < now) {
         entry.status = 'expired';
-        await codesStore.setJSON(blob.key, entry);
+        await bSet('codes', key, entry);
       }
-
-      codes.push({
-        code:      entry.code,
-        book:      entry.book,
-        status:    entry.status,
-        student:   entry.studentName || '',
-        email:     entry.email || '',
-        activated: entry.activatedAt ? fmtDate(entry.activatedAt) : '',
-        expires:   entry.expiresAt   ? fmtDate(entry.expiresAt)   : '',
-      });
+      codes.push({ code:entry.code, book:entry.book, status:entry.status, student:entry.studentName||'', email:entry.email||'', activated:entry.activatedAt?fmtDate(entry.activatedAt):'', expires:entry.expiresAt?fmtDate(entry.expiresAt):'' });
     }
-
-    return resp({ status: 'ok', codes });
+    return ok({ status:'ok', codes:codes });
   }
 
-  // ════════════════════════════════════════════════════════
-  //  LIST STUDENTS (admin)
-  //  GET /api?action=listStudents&adminPass=xxx
-  // ════════════════════════════════════════════════════════
+  // LIST STUDENTS
   if (action === 'listStudents') {
-    const adminPass = await codesStore.get('__admin_pass') || 'quickrebas2025';
-    if (params.adminPass !== adminPass) {
-      return resp({ status: 'error', message: 'Wrong admin password' }, 401);
-    }
-
-    const { blobs } = await studentsStore.list();
-    const students = [];
-    for (const blob of blobs) {
-      const s = await studentsStore.get(blob.key, { type: 'json' });
+    if (params.adminPass !== PASS) return ok({ status:'error', message:'Wrong password' });
+    var blobs = await bList('students');
+    var students = [];
+    for (var i = 0; i < blobs.length; i++) {
+      var s = await bGet('students', blobs[i].key || blobs[i]);
       if (s) students.push(s);
     }
-    return resp({ status: 'ok', students });
+    return ok({ status:'ok', students:students });
   }
 
-  // ════════════════════════════════════════════════════════
-  //  REVOKE CODE (admin)
-  //  GET /api?action=revoke&code=xxx&adminPass=xxx
-  // ════════════════════════════════════════════════════════
+  // REVOKE
   if (action === 'revoke') {
-    const adminPass = await codesStore.get('__admin_pass') || 'quickrebas2025';
-    if (params.adminPass !== adminPass) {
-      return resp({ status: 'error', message: 'Wrong admin password' }, 401);
-    }
-
-    const code  = params.code;
-    const entry = await codesStore.get(code, { type: 'json' });
-    if (!entry) return resp({ status: 'error', message: 'Code not found' });
-
+    if (params.adminPass !== PASS) return ok({ status:'error', message:'Wrong password' });
+    var entry = await bGet('codes', params.code);
+    if (!entry) return ok({ status:'error', message:'Code not found' });
     entry.status = 'revoked';
-    await codesStore.setJSON(code, entry);
-    return resp({ status: 'ok' });
+    await bSet('codes', params.code, entry);
+    return ok({ status:'ok' });
   }
 
-  // ════════════════════════════════════════════════════════
-  //  CHANGE ADMIN PASSWORD
-  //  POST /api?action=changePass
-  //  body: { oldPass, newPass }
-  // ════════════════════════════════════════════════════════
-  if (action === 'changePass') {
-    const stored = await codesStore.get('__admin_pass') || 'quickrebas2025';
-    if (body.oldPass !== stored) {
-      return resp({ status: 'error', message: 'Old password is incorrect' });
-    }
-    await codesStore.set('__admin_pass', body.newPass);
-    return resp({ status: 'ok' });
-  }
-
-  return resp({ status: 'ok', message: 'QuickRebas API' });
+  return ok({ status:'ok', message:'QuickRebas API running' });
 };
