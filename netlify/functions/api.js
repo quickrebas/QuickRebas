@@ -1,4 +1,4 @@
-// QuickRebas API v7 — uses Supabase (free, reliable, zero config issues)
+// QuickRebas API v7 — Supabase database
 
 const https = require('https');
 
@@ -35,18 +35,17 @@ function addMonths(n) {
   return d.toISOString();
 }
 
-// ── Supabase REST API ─────────────────────────────────────────────────────────
+// ── Supabase REST ─────────────────────────────────────────────────────────────
 function supaReq(method, path, body) {
-  const url   = process.env.SUPABASE_URL;
-  const key   = process.env.SUPABASE_KEY;
+  const url  = (process.env.SUPABASE_URL || '').replace('https://', '').replace(/\/$/, '');
+  const key  = process.env.SUPABASE_KEY;
   if (!url || !key) throw new Error('SUPABASE_URL or SUPABASE_KEY not set');
 
-  const host     = url.replace('https://', '');
-  const bodyStr  = body ? JSON.stringify(body) : null;
+  const bodyStr = body ? JSON.stringify(body) : null;
 
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: host,
+      hostname: url,
       path: '/rest/v1/' + path,
       method,
       headers: {
@@ -62,8 +61,8 @@ function supaReq(method, path, body) {
       let data = '';
       r.on('data', c => data += c);
       r.on('end', () => {
-        try { resolve({ status: r.statusCode, data: data ? JSON.parse(data) : null }); }
-        catch(e) { resolve({ status: r.statusCode, data: null }); }
+        try { resolve({ status: r.statusCode, data: data ? JSON.parse(data) : null, raw: data }); }
+        catch(e) { resolve({ status: r.statusCode, data: null, raw: data }); }
       });
     });
     req.on('error', reject);
@@ -80,12 +79,12 @@ async function dbGet(table, col, val) {
 
 async function dbInsert(table, row) {
   const r = await supaReq('POST', table, row);
-  return r.status === 201 || r.status === 200;
+  return { ok: r.status === 201 || r.status === 200, status: r.status, error: r.raw };
 }
 
 async function dbUpdate(table, col, val, updates) {
   const r = await supaReq('PATCH', table + '?' + col + '=eq.' + encodeURIComponent(val), updates);
-  return r.status === 200;
+  return r.status === 200 || r.status === 204;
 }
 
 async function dbList(table, filters) {
@@ -107,29 +106,66 @@ exports.handler = async (event) => {
   let body = {};
   if (event.body) { try { body = JSON.parse(event.body); } catch(e) {} }
 
-  // PING
+  // PING + DEBUG
   if (action === 'ping') {
     try {
+      // Try to read the codes table
       const r = await supaReq('GET', 'codes?limit=1', null);
-      return res({ status: 'ok', message: 'QuickRebas API v7 — Supabase', dbWorking: r.status === 200, dbStatus: r.status });
+      // Try a test insert
+      const testCode = 'TEST-' + Date.now();
+      const ins = await dbInsert('codes', {
+        code: testCode, book: 'TEST', status: 'unused',
+        created_at: new Date().toISOString()
+      });
+      // Clean up test
+      await supaReq('DELETE', 'codes?code=eq.' + testCode, null);
+
+      return res({
+        status: 'ok',
+        message: 'QuickRebas API v7',
+        tableReadStatus: r.status,
+        tableReadWorks: r.status === 200,
+        insertWorks: ins.ok,
+        insertStatus: ins.status,
+        insertError: ins.ok ? null : ins.error,
+      });
     } catch(e) {
-      return res({ status: 'ok', message: 'QuickRebas API v7', dbWorking: false, error: e.message });
+      return res({ status: 'error', error: e.message });
     }
   }
 
   // GENERATE
   if (action === 'generate') {
     if (body.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
-    const book  = (body.book || 'A0').toUpperCase();
-    const qty   = Math.min(parseInt(body.qty) || 10, 200);
-    const now   = new Date().toISOString();
-    const codes = [];
+
+    const book   = (body.book || 'A0').toUpperCase();
+    const qty    = Math.min(parseInt(body.qty) || 10, 200);
+    const now    = new Date().toISOString();
+    const codes  = [];
+    const errors = [];
 
     for (let i = 0; i < qty; i++) {
       const code = mkCode(book);
-      const ok   = await dbInsert('codes', { code, book, status: 'unused', created_at: now });
-      if (ok) codes.push(code);
+      const r    = await dbInsert('codes', {
+        code, book, status: 'unused', created_at: now
+      });
+      if (r.ok) {
+        codes.push(code);
+      } else {
+        errors.push({ code, status: r.status, error: r.error });
+        if (errors.length === 1) break; // stop early — show first error
+      }
     }
+
+    if (errors.length > 0) {
+      return res({
+        status: 'error',
+        message: 'Database insert failed',
+        firstError: errors[0],
+        saved: codes.length,
+      });
+    }
+
     return res({ status: 'ok', codes, count: codes.length });
   }
 
@@ -138,9 +174,9 @@ exports.handler = async (event) => {
     const code = p.code;
     if (!code) return res({ status: 'invalid' });
     const row = await dbGet('codes', 'code', code);
-    if (!row)                      return res({ status: 'invalid' });
-    if (row.status === 'active')   return res({ status: 'used' });
-    if (row.status === 'revoked')  return res({ status: 'invalid' });
+    if (!row)                     return res({ status: 'invalid' });
+    if (row.status === 'active')  return res({ status: 'used' });
+    if (row.status === 'revoked') return res({ status: 'invalid' });
     return res({ status: 'valid', book: 'QuickRebas ' + row.book, level: row.book.toLowerCase() });
   }
 
@@ -151,8 +187,14 @@ exports.handler = async (event) => {
     const row = await dbGet('codes', 'code', code);
     if (!row || row.status !== 'unused') return res({ status: 'error', message: 'Code not valid or already used' });
     const now = new Date().toISOString(), expiry = addMonths(6);
-    await dbUpdate('codes', 'code', code, { status: 'active', student_name: name, email, activated_at: now, expires_at: expiry });
-    await dbInsert('students', { name, email, book: row.book, level: row.book.toLowerCase(), code, activated_at: now, expires_at: expiry });
+    await dbUpdate('codes', 'code', code, {
+      status: 'active', student_name: name, email,
+      activated_at: now, expires_at: expiry
+    });
+    await dbInsert('students', {
+      name, email, book: row.book, level: row.book.toLowerCase(),
+      code, activated_at: now, expires_at: expiry
+    });
     return res({ status: 'ok', expiry, book: 'QuickRebas ' + row.book, level: row.book.toLowerCase() });
   }
 
@@ -163,13 +205,16 @@ exports.handler = async (event) => {
     if (new Date(row.expires_at) < new Date()) return res({ status: 'error', message: 'Access expired' });
     const ce = await dbGet('codes', 'code', row.code);
     if (!ce || ce.status === 'revoked') return res({ status: 'error', message: 'Access revoked' });
-    return res({ status: 'ok', student: { name: row.name, email: row.email, book: row.book, level: row.level, code: row.code, expiresAt: row.expires_at } });
+    return res({ status: 'ok', student: {
+      name: row.name, email: row.email, book: row.book,
+      level: row.level, code: row.code, expiresAt: row.expires_at
+    }});
   }
 
   // LIST CODES
   if (action === 'listCodes') {
     if (p.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
-    const rows = await dbList('codes', 'order=created_at.desc');
+    const rows  = await dbList('codes', 'order=created_at.desc');
     const codes = rows.map(r => ({
       code: r.code, book: r.book, status: r.status,
       student: r.student_name || '', email: r.email || '',
@@ -206,7 +251,7 @@ exports.handler = async (event) => {
 
   // GET AUDIO
   if (action === 'getAudio') {
-    const row = await dbGet('settings', 'key', 'audio_urls');
+    const row  = await dbGet('settings', 'key', 'audio_urls');
     const urls = row ? JSON.parse(row.value) : {};
     return res({ status: 'ok', urls });
   }
