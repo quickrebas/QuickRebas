@@ -2,22 +2,16 @@
   functions = "netlify/functions"
 
 [[redirects]]
-  from = "/api"
-  to   = "/.netlify/functions/api"
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
 
 [[redirects]]
-  from = "/api/*"
-  to   = "/.netlify/functions/api/:splat"
+  from = "/api"
+  to = "/.netlify/functions/api"
   status = 200
 
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    X-Content-Type-Options = "nosniff"
-
-[[headers]]
-  for = "/*.html"
-  [headers.values]
-    Cache-Control = "no-cache"
+    Access-Control-Allow-Origin = "*"
