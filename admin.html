@@ -451,9 +451,22 @@ function filterStatus(s) {
 
 function revoke(code) {
   if (!confirm('Revoke ' + code + '?\nThis ends the student\'s access immediately.')) return;
-  fetch(API + '?action=revoke&code=' + encodeURIComponent(code) + '&adminPass=' + encodeURIComponent(pass))
-    .then(r => r.json())
-    .then(() => loadCodes());
+  var adminPass = pass || sessionStorage.getItem('qr_admin') || '';
+  fetch(API + '?action=revoke&code=' + encodeURIComponent(code) + '&adminPass=' + encodeURIComponent(adminPass))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status === 'ok') {
+        // Update the row immediately without reloading
+        allCodes = allCodes.map(function(c) {
+          if (c.code === code) c.status = 'revoked';
+          return c;
+        });
+        renderCodes(allCodes);
+      } else {
+        alert('Error revoking code: ' + (data.message || 'Unknown error'));
+      }
+    })
+    .catch(function() { alert('Connection error. Please try again.'); });
 }
 
 // ── GENERATE ──────────────────────────────────────────────────────────────────

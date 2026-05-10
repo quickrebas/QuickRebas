@@ -193,7 +193,7 @@ var aud=document.getElementById('aud');
 var speeds=[0.75,1,1.25,1.5],spdI=1;
 
 function gs(){try{return JSON.parse(localStorage.getItem('qr_session'));}catch(e){return null;}}
-function logout(){localStorage.removeItem('qr_session');location.href='index.html';}
+function logout(){localStorage.removeItem('qr_session');location.href='signin.html';}
 function fmt(s){if(!s||isNaN(s))return'0:00';var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
 
 window.addEventListener('DOMContentLoaded',async function(){

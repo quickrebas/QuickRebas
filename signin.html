@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — QuickRebas</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#E8A04C;--ink:#0F1218;--white:#fff;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Montserrat',sans-serif;background:var(--ink);color:var(--white);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background-image:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(92,58,138,0.15) 0%,transparent 70%);}
+.logo{font-size:1rem;font-weight:900;margin-bottom:40px;text-align:center;letter-spacing:-0.02em;}
+.logo .q{color:rgba(255,255,255,0.25);}.logo .dot{color:var(--gold);}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:48px 40px;width:100%;max-width:420px;}
+.icon{font-size:2.2rem;margin-bottom:18px;text-align:center;}
+h2{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:700;margin-bottom:8px;text-align:center;letter-spacing:-0.02em;}
+.sub{font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:32px;line-height:1.6;text-align:center;}
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:0.7rem;font-weight:700;letter-spacing:0.12em;color:rgba(255,255,255,0.45);margin-bottom:8px;}
+.field input{width:100%;padding:15px 18px;border-radius:10px;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);color:white;font-family:'Montserrat',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s;}
+.field input:focus{border-color:var(--gold);}
+.field input::placeholder{color:rgba(255,255,255,0.2);}
+.btn{width:100%;padding:16px;border-radius:12px;border:none;background:var(--gold);color:var(--ink);font-family:'Montserrat',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;transition:all 0.25s;margin-top:4px;}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(232,160,76,0.35);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.divider{margin:24px 0;color:rgba(255,255,255,0.2);font-size:0.75rem;text-align:center;}
+.btn-outline{width:100%;padding:14px;border-radius:12px;background:transparent;border:1.5px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-family:'Montserrat',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;}
+.btn-outline:hover{border-color:rgba(255,255,255,0.4);color:white;}
+.error-msg{background:rgba(180,60,60,0.15);border:1px solid rgba(180,60,60,0.3);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:0.82rem;color:#F87171;display:none;text-align:center;}
+.error-msg.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="logo"><span class="q">QUICK</span>REBAS<span class="dot">·</span></div>
+
+<div class="card">
+  <div class="icon">🎧</div>
+  <h2>Sign in</h2>
+  <p class="sub">Enter the email and password you used when you activated your workbook code.</p>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="field">
+    <label>EMAIL ADDRESS</label>
+    <input type="email" id="emailInput" placeholder="your@email.com" autocomplete="email">
+  </div>
+  <div class="field">
+    <label>PASSWORD</label>
+    <input type="password" id="passInput" placeholder="Your password" autocomplete="current-password">
+  </div>
+
+  <button class="btn" id="signinBtn" onclick="signin()">Sign in to my dashboard</button>
+
+  <div class="divider">— don't have an account yet? —</div>
+  <button class="btn-outline" onclick="window.location.href='activate.html'">Activate my workbook code</button>
+</div>
+
+<script>
+var API = '/api';
+
+function showError(msg) {
+  var el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 5000);
+}
+
+// If already logged in — go straight to dashboard
+window.addEventListener('DOMContentLoaded', function() {
+  var session = null;
+  try { session = JSON.parse(localStorage.getItem('qr_session')); } catch(e) {}
+  if (session && new Date(session.expiry) > new Date()) {
+    window.location.href = 'student.html';
+  }
+  // Pre-fill email if remembered
+  var saved = localStorage.getItem('qr_saved_email');
+  if (saved) document.getElementById('emailInput').value = saved;
+});
+
+document.getElementById('passInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') signin();
+});
+document.getElementById('emailInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('passInput').focus();
+});
+
+function signin() {
+  var email = document.getElementById('emailInput').value.trim();
+  var pass  = document.getElementById('passInput').value;
+
+  if (!email || !email.includes('@')) { showError('Please enter a valid email address.'); return; }
+  if (!pass) { showError('Please enter your password.'); return; }
+
+  var btn = document.getElementById('signinBtn');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  fetch(API + '?action=signin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, password: pass })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.status === 'ok') {
+      // Save session and remember email
+      localStorage.setItem('qr_session', JSON.stringify({
+        name:    data.student.name,
+        email:   data.student.email,
+        book:    data.student.book,
+        level:   data.student.level,
+        code:    data.student.code,
+        expiry:  data.student.expiresAt,
+        active:  true,
+      }));
+      localStorage.setItem('qr_saved_email', email);
+      window.location.href = 'student.html';
+    } else {
+      showError(data.message || 'Sign in failed. Please check your email and password.');
+      btn.disabled = false;
+      btn.textContent = 'Sign in to my dashboard';
+    }
+  })
+  .catch(function() {
+    showError('Connection error. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Sign in to my dashboard';
+  });
+}
+</script>
+</body>
+</html>

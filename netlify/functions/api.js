@@ -182,8 +182,8 @@ exports.handler = async (event) => {
 
   // ACTIVATE
   if (action === 'activate') {
-    const { code, name, email } = body;
-    if (!code || !name || !email) return res({ status: 'error', message: 'Missing fields' });
+    const { code, name, email, password } = body;
+    if (!code || !name || !email || !password) return res({ status: 'error', message: 'Missing fields' });
     const row = await dbGet('codes', 'code', code);
     if (!row || row.status !== 'unused') return res({ status: 'error', message: 'Code not valid or already used' });
     const now = new Date().toISOString(), expiry = addMonths(6);
@@ -192,19 +192,23 @@ exports.handler = async (event) => {
       activated_at: now, expires_at: expiry
     });
     await dbInsert('students', {
-      name, email, book: row.book, level: row.book.toLowerCase(),
-      code, activated_at: now, expires_at: expiry
+      name, email, password, book: row.book,
+      level: row.book.toLowerCase(), code,
+      activated_at: now, expires_at: expiry
     });
     return res({ status: 'ok', expiry, book: 'QuickRebas ' + row.book, level: row.book.toLowerCase() });
   }
 
   // SIGNIN
   if (action === 'signin') {
-    const row = await dbGet('students', 'email', body.email);
-    if (!row) return res({ status: 'error', message: 'No account found' });
-    if (new Date(row.expires_at) < new Date()) return res({ status: 'error', message: 'Access expired' });
+    const { email, password } = body;
+    if (!email || !password) return res({ status: 'error', message: 'Missing email or password' });
+    const row = await dbGet('students', 'email', email);
+    if (!row) return res({ status: 'error', message: 'No account found for this email. Please check your email or activate your code first.' });
+    if (row.password !== password) return res({ status: 'error', message: 'Wrong password. Please try again.' });
+    if (new Date(row.expires_at) < new Date()) return res({ status: 'error', message: 'Your access has expired. Please purchase a new workbook.' });
     const ce = await dbGet('codes', 'code', row.code);
-    if (!ce || ce.status === 'revoked') return res({ status: 'error', message: 'Access revoked' });
+    if (!ce || ce.status === 'revoked') return res({ status: 'error', message: 'Your access has been revoked. Please contact your teacher.' });
     return res({ status: 'ok', student: {
       name: row.name, email: row.email, book: row.book,
       level: row.level, code: row.code, expiresAt: row.expires_at
