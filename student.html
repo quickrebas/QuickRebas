@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Dashboard — QuickRebas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800;900&family=Fraunces:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold:#E8A04C; --ink:#0F1218; --ink2:#161C26; --white:#FFFFFF;
+    --border:rgba(255,255,255,0.08);
+    --accent: #E8A04C;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Montserrat',sans-serif; background:var(--ink); color:var(--white); min-height:100vh; }
+
+  /* SIDEBAR */
+  .layout { display:flex; min-height:100vh; }
+  .sidebar {
+    width:260px; flex-shrink:0; background:var(--ink2); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:50;
+    overflow-y:auto;
+  }
+  .sidebar-logo {
+    padding:28px 24px 20px; font-weight:900; font-size:0.95rem;
+    border-bottom:1px solid var(--border); letter-spacing:-0.02em;
+  }
+  .sidebar-logo .quick { color:rgba(255,255,255,0.25); }
+  .sidebar-logo .dot { color:var(--gold); }
+
+  .sidebar-user { padding:20px 24px; border-bottom:1px solid var(--border); }
+  .user-avatar {
+    width:40px; height:40px; border-radius:50%; background:rgba(232,160,76,0.2);
+    border:1.5px solid rgba(232,160,76,0.4); display:flex; align-items:center;
+    justify-content:center; font-weight:800; font-size:0.9rem; color:var(--gold);
+    margin-bottom:10px;
+  }
+  .user-name { font-size:0.85rem; font-weight:700; margin-bottom:2px; }
+  .user-book { font-size:0.72rem; color:rgba(255,255,255,0.4); }
+
+  .expiry-pill {
+    margin:0 24px 20px; padding:10px 14px; border-radius:10px;
+    background:rgba(232,160,76,0.08); border:1px solid rgba(232,160,76,0.2);
+  }
+  .expiry-pill .el { font-size:0.6rem; letter-spacing:0.18em; color:var(--gold); font-weight:700; }
+  .expiry-pill .ev { font-size:0.8rem; font-weight:600; margin-top:2px; }
+  .expiry-pill .progress-bar {
+    height:3px; background:rgba(255,255,255,0.1); border-radius:2px; margin-top:8px; overflow:hidden;
+  }
+  .expiry-pill .progress-fill { height:100%; border-radius:2px; background:var(--gold); transition:width 0.8s; }
+
+  .sidebar-nav { padding:16px 16px; flex:1; }
+  .nav-section-label {
+    font-size:0.6rem; letter-spacing:0.2em; color:rgba(255,255,255,0.25);
+    font-weight:700; padding:0 8px; margin-bottom:8px; margin-top:16px;
+  }
+  .unit-btn {
+    width:100%; padding:10px 12px; border-radius:8px; border:none;
+    background:transparent; color:rgba(255,255,255,0.55); cursor:pointer;
+    font-family:'Montserrat',sans-serif; font-size:0.78rem; font-weight:600;
+    text-align:left; display:flex; align-items:center; gap:10px;
+    transition:all 0.2s; margin-bottom:2px;
+  }
+  .unit-btn:hover { background:rgba(255,255,255,0.06); color:white; }
+  .unit-btn.active { background:rgba(232,160,76,0.12); color:var(--gold); }
+  .unit-btn .u-num {
+    width:24px; height:24px; border-radius:6px; font-size:0.7rem; font-weight:800;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    background:rgba(255,255,255,0.08);
+  }
+  .unit-btn.active .u-num { background:rgba(232,160,76,0.2); color:var(--gold); }
+
+  .sidebar-footer { padding:20px 24px; border-top:1px solid var(--border); }
+  .logout-btn {
+    width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);
+    background:transparent; color:rgba(255,255,255,0.4); font-family:'Montserrat',sans-serif;
+    font-size:0.75rem; font-weight:600; cursor:pointer; transition:all 0.2s;
+  }
+  .logout-btn:hover { border-color:rgba(255,80,80,0.4); color:rgba(255,120,120,0.8); }
+
+  /* MAIN */
+  .main { margin-left:260px; padding:48px; flex:1; max-width:calc(100vw - 260px); }
+
+  .page-header { margin-bottom:36px; }
+  .page-header h1 {
+    font-family:'Fraunces',serif; font-size:2.2rem; font-weight:700;
+    letter-spacing:-0.02em; margin-bottom:8px;
+  }
+  .page-header .sub { font-size:0.85rem; color:rgba(255,255,255,0.4); }
+
+  /* TRACK LIST */
+  .unit-section { margin-bottom:40px; display:none; }
+  .unit-section.active { display:block; }
+  .unit-header {
+    display:flex; align-items:center; gap:16px; margin-bottom:20px;
+    padding-bottom:16px; border-bottom:1px solid var(--border);
+  }
+  .unit-color-dot {
+    width:12px; height:12px; border-radius:50%; flex-shrink:0;
+  }
+  .unit-title { font-size:1rem; font-weight:800; }
+  .unit-subtitle { font-size:0.78rem; color:rgba(255,255,255,0.4); margin-top:2px; }
+  .track-count { margin-left:auto; font-size:0.72rem; color:rgba(255,255,255,0.3); font-weight:600; }
+
+  .tracks-list { display:flex; flex-direction:column; gap:8px; }
+
+  .track-item {
+    display:flex; align-items:center; gap:16px;
+    padding:14px 18px; border-radius:12px;
+    background:rgba(255,255,255,0.03); border:1px solid var(--border);
+    transition:all 0.2s; cursor:pointer;
+  }
+  .track-item:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); }
+  .track-item.playing { background:rgba(232,160,76,0.08); border-color:rgba(232,160,76,0.3); }
+
+  .track-play-btn {
+    width:38px; height:38px; border-radius:50%; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    background:rgba(255,255,255,0.08); color:white; transition:all 0.2s;
+    font-size:0.9rem;
+  }
+  .track-play-btn:hover { background:rgba(232,160,76,0.2); transform:scale(1.05); }
+  .track-item.playing .track-play-btn { background:var(--gold); color:var(--ink); }
+
+  .track-info { flex:1; min-width:0; }
+  .track-num { font-size:0.65rem; letter-spacing:0.15em; color:rgba(255,255,255,0.3); font-weight:700; margin-bottom:3px; }
+  .track-name { font-size:0.88rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .track-progress {
+    flex:1; max-width:200px;
+  }
+  .progress-track {
+    height:3px; background:rgba(255,255,255,0.1); border-radius:2px; cursor:pointer; position:relative;
+  }
+  .progress-fill { height:100%; border-radius:2px; background:var(--gold); width:0%; transition:width 0.1s linear; }
+  .track-time { font-size:0.68rem; color:rgba(255,255,255,0.3); margin-top:4px; font-family:monospace; }
+
+  /* AUDIO PLAYER BAR */
+  .player-bar {
+    position:fixed; bottom:0; left:260px; right:0;
+    background:rgba(15,18,24,0.95); backdrop-filter:blur(20px);
+    border-top:1px solid var(--border); padding:16px 32px;
+    display:flex; align-items:center; gap:24px;
+    transform:translateY(100%); transition:transform 0.3s;
+    z-index:40;
+  }
+  .player-bar.visible { transform:translateY(0); }
+  .player-now { flex:1; min-width:0; }
+  .player-now .p-num { font-size:0.6rem; letter-spacing:0.15em; color:var(--gold); font-weight:700; }
+  .player-now .p-name { font-size:0.85rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .player-controls { display:flex; align-items:center; gap:12px; }
+  .p-btn {
+    width:42px; height:42px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,0.1); color:white; font-size:1rem;
+    display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+  }
+  .p-btn.main-btn { background:var(--gold); color:var(--ink); width:48px; height:48px; font-size:1.1rem; }
+  .p-btn:hover { transform:scale(1.08); }
+  .player-progress { flex:2; max-width:400px; }
+  .p-prog-track { height:4px; background:rgba(255,255,255,0.1); border-radius:2px; cursor:pointer; margin-bottom:6px; }
+  .p-prog-fill { height:100%; border-radius:2px; background:var(--gold); width:0%; transition:width 0.1s linear; }
+  .p-times { display:flex; justify-content:space-between; font-size:0.65rem; color:rgba(255,255,255,0.35); font-family:monospace; }
+  .speed-btn {
+    background:rgba(255,255,255,0.08); border:none; color:rgba(255,255,255,0.6);
+    padding:6px 12px; border-radius:20px; font-family:'Montserrat',sans-serif;
+    font-size:0.72rem; font-weight:700; cursor:pointer; transition:all 0.2s;
+  }
+  .speed-btn:hover { background:rgba(255,255,255,0.15); color:white; }
+
+  /* MOBILE NAV */
+  .mobile-nav {
+    display:none; position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(15,18,24,0.95); backdrop-filter:blur(20px);
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    align-items:center; justify-content:space-between;
+  }
+  .hamburger { background:none; border:none; color:white; font-size:1.4rem; cursor:pointer; }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:49; }
+
+  /* ACCESS DENIED */
+  .access-denied {
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; text-align:center; padding:48px;
+  }
+  .access-denied.show { display:flex; }
+
+  @media (max-width:768px) {
+    .sidebar { transform:translateX(-100%); transition:transform 0.3s; }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay.show { display:block; }
+    .main { margin-left:0; padding:80px 20px 100px; max-width:100vw; }
+    .mobile-nav { display:flex; }
+    .player-bar { left:0; }
+    .track-progress { display:none; }
+    .player-progress { max-width:none; flex:1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ACCESS DENIED (shown when not logged in) -->
+<div class="access-denied" id="accessDenied">
+  <div style="font-size:3rem;margin-bottom:20px;">🔒</div>
+  <h2 style="font-family:'Fraunces',serif;font-size:2rem;margin-bottom:12px;">Access required</h2>
+  <p style="color:rgba(255,255,255,0.5);margin-bottom:32px;max-width:360px;line-height:1.6;">You need to activate your workbook access code to listen to the audio tracks.</p>
+  <a href="activate.html" style="background:var(--gold);color:var(--ink);padding:16px 40px;border-radius:50px;font-weight:800;text-decoration:none;font-size:0.9rem;">Activate my code</a>
+</div>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobileNav">
+  <div style="font-weight:900;font-size:0.9rem;"><span style="color:rgba(255,255,255,0.25)">QUICK</span>REBAS<span style="color:#E8A04C;">·</span></div>
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+</div>
+
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="layout" id="appLayout" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="quick">QUICK</span>REBAS<span class="dot">·</span>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="userAvatar">S</div>
+      <div class="user-name" id="userName">Student</div>
+      <div class="user-book" id="userBook">QuickRebas A0</div>
+    </div>
+    <div class="expiry-pill">
+      <div class="el">ACCESS EXPIRES</div>
+      <div class="ev" id="expiryDate">—</div>
+      <div class="progress-bar"><div class="progress-fill" id="expiryProgress" style="width:80%;"></div></div>
+    </div>
+    <div class="sidebar-nav" id="sidebarNav">
+      <!-- Filled by JS -->
+    </div>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <div class="page-header">
+      <h1 id="mainTitle">My Audio Tracks</h1>
+      <p class="sub" id="mainSub">Select a unit from the sidebar to browse tracks</p>
+    </div>
+    <div id="unitsContainer">
+      <!-- Filled by JS -->
+    </div>
+  </main>
+
+</div>
+
+<!-- PLAYER BAR -->
+<div class="player-bar" id="playerBar">
+  <div class="player-now">
+    <div class="p-num" id="playerTrackNum">TRACK 1.1</div>
+    <div class="p-name" id="playerTrackName">Loading...</div>
+  </div>
+  <div class="player-controls">
+    <button class="p-btn" onclick="skipTrack(-1)" title="Previous">⏮</button>
+    <button class="p-btn main-btn" id="mainPlayBtn" onclick="togglePlay()">▶</button>
+    <button class="p-btn" onclick="skipTrack(1)" title="Next">⏭</button>
+  </div>
+  <div class="player-progress">
+    <div class="p-prog-track" onclick="seekTo(event, this)">
+      <div class="p-prog-fill" id="playerProgress"></div>
+    </div>
+    <div class="p-times">
+      <span id="playerCurrent">0:00</span>
+      <span id="playerTotal">0:00</span>
+    </div>
+  </div>
+  <button class="speed-btn" onclick="cycleSpeed()" id="speedBtn">1×</button>
+</div>
+
+<audio id="audioEl"></audio>
+
+<script>
+// ── TRACK DATA PER BOOK ──
+const BOOKS = {
+  a0: {
+    name:'QuickRebas A0 — Starter', color:'#E8A04C',
+    units: [
+      { num:1, title:'Me & My World', color:'#6B8CAE', tracks:[
+        {id:'1.1',name:'Greetings'},{id:'1.2',name:'Greeting conversations'},
+        {id:'1.3',name:'Numbers 0–20'},{id:'1.4',name:'Letter dictation'},
+        {id:'1.5',name:'Number dictation'},{id:'1.6',name:'Greeting dialogue'},
+        {id:'1.7',name:'Alphabet sounds'},
+      ]},
+      { num:2, title:'My Family', color:'#7BA081', tracks:[
+        {id:'2.1',name:'Family members'},{id:'2.2',name:'Adjectives'},
+        {id:'2.3',name:'Family dialogue'},{id:'2.4',name:'Possessives'},
+      ]},
+      { num:3, title:'Around the World', color:'#6B9DC2', tracks:[
+        {id:'3.1',name:'Countries'},{id:'3.2',name:'Nationalities'},
+        {id:'3.3',name:'To be — dialogue'},{id:'3.4',name:'Countries pronunciation'},
+        {id:'3.5',name:'Where are you from?'},
+      ]},
+      { num:4, title:'At School', color:'#7BB39A', tracks:[
+        {id:'4.1',name:'Classroom objects'},{id:'4.2',name:'A/an exercise'},
+        {id:'4.3',name:'School dialogue'},{id:'4.4',name:'Plurals'},
+        {id:'4.5',name:'What is this?'},
+      ]},
+      { num:5, title:'Daily Life', color:'#9B7AA8', tracks:[
+        {id:'5.1',name:'Daily routine verbs'},{id:'5.2',name:'Telling the time'},
+        {id:'5.3',name:'Maya\'s day'},{id:'5.4',name:'Present simple Q&A'},
+        {id:'5.5',name:'Time expressions'},
+      ]},
+      { num:6, title:'Food & Health', color:'#7BA081', tracks:[
+        {id:'6.1',name:'Food vocabulary'},{id:'6.2',name:'Drinks vocabulary'},
+        {id:'6.3',name:'Café menu dialogue'},{id:'6.4',name:'Like / don\'t like'},
+      ]},
+      { num:7, title:'Home Sweet Home', color:'#C97B5A', tracks:[
+        {id:'7.1',name:'Rooms and furniture'},{id:'7.2',name:'Prepositions'},
+        {id:'7.3',name:'There is / there are'},{id:'7.4',name:'House description'},
+      ]},
+      { num:8, title:'Free Time', color:'#5A9698', tracks:[
+        {id:'8.1',name:'Hobbies'},{id:'8.2',name:'Frequency adverbs'},
+        {id:'8.3',name:'Weekend dialogue'},{id:'8.4',name:'Like + -ing'},
+      ]},
+      { num:9, title:'Shopping & Style', color:'#C97B89', tracks:[
+        {id:'9.1',name:'Clothes'},{id:'9.2',name:'Colours'},
+        {id:'9.3',name:'Shop conversation'},{id:'9.4',name:'13 vs 30'},
+      ]},
+      { num:10, title:'Celebrations', color:'#8E5C9A', tracks:[
+        {id:'10.1',name:'Months and dates'},{id:'10.2',name:'Ordinal numbers'},
+        {id:'10.3',name:'Sara\'s birthday'},{id:'10.4',name:'Can / can\'t'},
+        {id:'10.5',name:'Special days dialogue'},
+      ]},
+    ]
+  },
+  a1: {
+    name:'QuickRebas A1 — Elementary', color:'#B5623A',
+    units: [
+      { num:1, title:'My Life & People', color:'#B5623A', tracks:[
+        {id:'1.1',name:'Describing people'},{id:'1.2',name:'Four descriptions'},
+        {id:'1.3',name:'Personality adjectives'},{id:'1.4',name:"Sara's neighbour"},
+        {id:'1.5',name:'Stress in adjectives'},
+      ]},
+      { num:2, title:'A Day in the City', color:'#4A8DB5', tracks:[
+        {id:'2.1',name:'City places'},{id:'2.2',name:'City activities'},
+        {id:'2.3',name:'City sounds'},{id:'2.4',name:'Phone conversation'},
+        {id:'2.5',name:"Weak 'are'"},
+      ]},
+      { num:3, title:'Past Days', color:'#2A7A7C', tracks:[
+        {id:'3.1',name:'Time expressions'},{id:'3.2',name:'Feelings'},
+        {id:'3.3',name:"Sam's first day"},{id:'3.4',name:"Was — strong/weak"},
+      ]},
+      { num:4, title:'My Weekend', color:'#3A7A5A', tracks:[
+        {id:'4.1',name:'Weekend activities'},{id:'4.2',name:'Past time collocations'},
+        {id:'4.3',name:"Ana's weekend"},{id:'4.4',name:'-ed endings'},
+      ]},
+      { num:5, title:'Travel & Transport', color:'#4A5AA8', tracks:[
+        {id:'5.1',name:'Transport'},{id:'5.2',name:'Travel vocabulary'},
+        {id:'5.3',name:"Sara's trip"},{id:'5.4',name:'Irregular past forms'},
+      ]},
+      { num:6, title:'Nature & Weather', color:'#6A9A7A', tracks:[
+        {id:'6.1',name:'Weather'},{id:'6.2',name:'Nature'},
+        {id:'6.3',name:'Weather forecast'},{id:'6.4',name:'-er endings'},
+      ]},
+      { num:7, title:'Plans & Dreams', color:'#B84A6A', tracks:[
+        {id:'7.1',name:'Future plans'},{id:'7.2',name:'Time expressions future'},
+        {id:'7.3',name:"Rosa's plans"},{id:'7.4',name:"Going to / gonna"},
+      ]},
+      { num:8, title:'Health & Body', color:'#2A6A9A', tracks:[
+        {id:'8.1',name:'Body parts'},{id:'8.2',name:'Health problems'},
+        {id:'8.3',name:"Doctor consultation"},{id:'8.4',name:'Polite intonation'},
+      ]},
+      { num:9, title:'Food & Restaurants', color:'#7A4A8A', tracks:[
+        {id:'9.1',name:'Countable/uncountable'},{id:'9.2',name:'Restaurant vocabulary'},
+        {id:'9.3',name:'Ordering food'},{id:'9.4',name:'Restaurant phrases'},
+      ]},
+      { num:10, title:'My Future', color:'#B8882A', tracks:[
+        {id:'10.1',name:'Technology'},{id:'10.2',name:'Predictions vocabulary'},
+        {id:'10.3',name:'Four predictions'},{id:'10.4',name:"Will — strong/weak"},
+      ]},
+    ]
+  },
+  a2: {
+    name:'QuickRebas A2 — Pre-Intermediate', color:'#2A6A3A',
+    units: [
+      { num:1, title:'Media & Communication', color:'#1A6B9A', tracks:[
+        {id:'1.1',name:'Media vocabulary'},{id:'1.2',name:'Digital communication'},
+        {id:'1.3',name:'Social media debate'},{id:'1.4',name:"Weak forms: have/has"},
+      ]},
+      { num:2, title:'Relationships & Emotions', color:'#A83A5A', tracks:[
+        {id:'2.1',name:'Relationship vocabulary'},{id:'2.2',name:'Emotions'},
+        {id:'2.3',name:'Three conversations'},{id:'2.4',name:'Stress for emotion'},
+      ]},
+      { num:3, title:'Work & Careers', color:'#2A6A3A', tracks:[
+        {id:'3.1',name:'Jobs'},{id:'3.2',name:'Career language'},
+        {id:'3.3',name:'Job interview'},{id:'3.4',name:'-ing in past continuous'},
+      ]},
+      { num:4, title:'Around Town', color:'#9A3A2A', tracks:[
+        {id:'4.1',name:'Neighbourhood places'},{id:'4.2',name:'Change vocabulary'},
+        {id:'4.3',name:'Hometown changes'},{id:'4.4',name:"used to /juːst tə/"},
+      ]},
+      { num:5, title:'Experiences & Memories', color:'#3A2A8A', tracks:[
+        {id:'5.1',name:'Experience adjectives'},{id:'5.2',name:'Storytelling phrases'},
+        {id:'5.3',name:"María's experience"},{id:'5.4',name:'Stressed superlatives'},
+      ]},
+      { num:6, title:'Health & Lifestyle', color:'#1A8A6A', tracks:[
+        {id:'6.1',name:'Health vocabulary'},{id:'6.2',name:'Medical expressions'},
+        {id:'6.3',name:'Doctor consultation'},{id:'6.4',name:'Weak modals'},
+      ]},
+      { num:7, title:'Technology & Change', color:'#4A5A2A', tracks:[
+        {id:'7.1',name:'Technology vocabulary'},{id:'7.2',name:'Change adjectives'},
+        {id:'7.3',name:'Tech panel debate'},{id:'7.4',name:"Contracted will"},
+      ]},
+      { num:8, title:'Arts & Culture', color:'#7A1A3A', tracks:[
+        {id:'8.1',name:'Art forms'},{id:'8.2',name:'Art adjectives'},
+        {id:'8.3',name:'Film review'},{id:'8.4',name:'Thought groups'},
+      ]},
+      { num:9, title:'Environment & Nature', color:'#0A4A6A', tracks:[
+        {id:'9.1',name:'Environment vocabulary'},{id:'9.2',name:'Environmental actions'},
+        {id:'9.3',name:'Climate scientist'},{id:'9.4',name:'Passive verb groups'},
+      ]},
+      { num:10, title:'Global Issues', color:'#5A1A7A', tracks:[
+        {id:'10.1',name:'Global issues'},{id:'10.2',name:'Opinion phrases'},
+        {id:'10.3',name:'Open borders debate'},{id:'10.4',name:"Would in speech"},
+      ]},
+    ]
+  },
+  b1: {
+    name:'QuickRebas B1 — Intermediate', color:'#5C3A8A',
+    units: [
+      { num:1, title:'Identity & Belonging', color:'#5C3A8A', tracks:[
+        {id:'1.1',name:'Identity vocabulary'},{id:'1.2',name:'Belonging expressions'},
+        {id:'1.3',name:'Identity voices'},{id:'1.4',name:"have been — weak forms"},
+      ]},
+      { num:2, title:'The Digital World', color:'#1A5A8A', tracks:[
+        {id:'2.1',name:'Digital society'},{id:'2.2',name:'Digital ethics'},
+        {id:'2.3',name:'Social media podcast'},{id:'2.4',name:"would've could've"},
+      ]},
+      { num:3, title:'Food Culture', color:'#8A2A2A', tracks:[
+        {id:'3.1',name:'Gastronomy vocabulary'},{id:'3.2',name:'Taste vocabulary'},
+        {id:'3.3',name:'Chef Amara'},{id:'3.4',name:'Wish pronunciation'},
+      ]},
+      { num:4, title:'Sport & Achievement', color:'#1A7A5A', tracks:[
+        {id:'4.1',name:'Sport vocabulary'},{id:'4.2',name:'Achievement expressions'},
+        {id:'4.3',name:'Sports interview'},{id:'4.4',name:'Relative clause stress'},
+      ]},
+      { num:5, title:'Crime & Justice', color:'#3A3A7A', tracks:[
+        {id:'5.1',name:'Crime vocabulary'},{id:'5.2',name:'Justice phrases'},
+        {id:'5.3',name:'Legal debate'},{id:'5.4',name:'Gerund vs infinitive'},
+      ]},
+      { num:6, title:'Science & Discovery', color:'#0A6A7A', tracks:[
+        {id:'6.1',name:'Science vocabulary'},{id:'6.2',name:'Deduction modals'},
+        {id:'6.3',name:'Scientist interview'},{id:'6.4',name:'Modal perfect sounds'},
+      ]},
+      { num:7, title:'Travel & Exchange', color:'#5A1A6A', tracks:[
+        {id:'7.1',name:'Travel vocabulary'},{id:'7.2',name:'Advanced passive'},
+        {id:'7.3',name:'Exchange student'},{id:'7.4',name:'Passive voice groups'},
+      ]},
+      { num:8, title:'Money & Economy', color:'#6A3A1A', tracks:[
+        {id:'8.1',name:'Economics vocabulary'},{id:'8.2',name:'Reporting verbs'},
+        {id:'8.3',name:'Economic interview'},{id:'8.4',name:'Reporting structures'},
+      ]},
+      { num:9, title:'Language & Communication', color:'#1A4A1A', tracks:[
+        {id:'9.1',name:'Linguistics vocabulary'},{id:'9.2',name:'Mixed conditionals'},
+        {id:'9.3',name:'Language discussion'},{id:'9.4',name:'Mixed conditional stress'},
+      ]},
+      { num:10, title:'The Future of Humanity', color:'#4A1A1A', tracks:[
+        {id:'10.1',name:'Future vocabulary'},{id:'10.2',name:'Narrative tenses'},
+        {id:'10.3',name:'Futurist talk'},{id:'10.4',name:'Thought groups'},
+      ]},
+    ]
+  },
+  b2: {
+    name:'QuickRebas B2 — Upper-Intermediate', color:'#1A3A6A',
+    units: [
+      { num:1, title:'Power & Politics', color:'#1A3A6A', tracks:[
+        {id:'1.1',name:'Political vocabulary'},{id:'1.2',name:'Political rhetoric'},
+        {id:'1.3',name:'Political speech'},{id:'1.4',name:'Inversion stress'},
+      ]},
+      { num:2, title:'Psychology & Behaviour', color:'#5A0A4A', tracks:[
+        {id:'2.1',name:'Psychology vocabulary'},{id:'2.2',name:'Cleft sentences'},
+        {id:'2.3',name:'Psychology podcast'},{id:'2.4',name:'Cleft sentence rhythm'},
+      ]},
+      { num:3, title:'Innovation & Enterprise', color:'#3A5A0A', tracks:[
+        {id:'3.1',name:'Innovation vocabulary'},{id:'3.2',name:'Subjunctive structures'},
+        {id:'3.3',name:'Startup pitch'},{id:'3.4',name:'Subjunctive vs indicative'},
+      ]},
+      { num:4, title:'Literature & Storytelling', color:'#5A2A6A', tracks:[
+        {id:'4.1',name:'Literary vocabulary'},{id:'4.2',name:'Advanced passive'},
+        {id:'4.3',name:'Literary analysis'},{id:'4.4',name:'Advanced passive patterns'},
+      ]},
+      { num:5, title:'Society & Change', color:'#0A4A6A', tracks:[
+        {id:'5.1',name:'Society vocabulary'},{id:'5.2',name:'Discourse markers'},
+        {id:'5.3',name:'Sociological analysis'},{id:'5.4',name:'Discourse marker intonation'},
+      ]},
+      { num:6, title:'Ethics & Philosophy', color:'#3A1A0A', tracks:[
+        {id:'6.1',name:'Ethics vocabulary'},{id:'6.2',name:'Concession clauses'},
+        {id:'6.3',name:'Ethical debate'},{id:'6.4',name:'Concession clause stress'},
+      ]},
+      { num:7, title:'The Human Experience', color:'#1A1A5A', tracks:[
+        {id:'7.1',name:'Philosophical vocabulary'},{id:'7.2',name:'Nominalisation'},
+        {id:'7.3',name:'Reflective passage'},{id:'7.4',name:'Nominalisation in speech'},
+      ]},
+    ]
+  }
+};
+
+// ── AUDIO URLS ──
+// Replace these placeholder URLs with your real audio file URLs.
+// Format: 'a0-1.1': 'https://your-youtube-or-drive-url'
+// The platform will work with any direct audio URL or YouTube embed.
+const AUDIO_URLS = {};
+
+// Generates a placeholder URL (silent audio) for demo
+function getAudioUrl(bookId, trackId) {
+  const key = `${bookId}-${trackId}`;
+  if (AUDIO_URLS[key]) return AUDIO_URLS[key];
+  // Placeholder: a short silent audio data URI
+  return 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+}
+
+// ── SESSION ──
+let session = null;
+let currentBook = null;
+let activeUnit = 0;
+let currentTrackIndex = 0;
+let allTracks = [];
+let isPlaying = false;
+const audio = document.getElementById('audioEl');
+let speeds = [0.75, 1, 1.25, 1.5];
+let speedIdx = 1;
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem('qr_session')); } catch(e) { return null; }
+}
+
+function logout() {
+  localStorage.removeItem('qr_session');
+  window.location.href = 'index.html';
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', () => {
+  session = getSession();
+
+  // Check URL param for QR track link
+  const params = new URLSearchParams(window.location.search);
+  const bookParam = params.get('book');
+  const trackParam = params.get('track');
+
+  if (!session) {
+    if (bookParam) {
+      // They scanned a QR — remember where they wanted to go
+      localStorage.setItem('qr_redirect', window.location.href);
+    }
+    document.getElementById('accessDenied').classList.add('show');
+    return;
+  }
+
+  // Check expiry
+  const expiry = new Date(session.expiry);
+  if (expiry < new Date()) {
+    localStorage.removeItem('qr_session');
+    document.getElementById('accessDenied').innerHTML = `
+      <div style="font-size:3rem;margin-bottom:20px;">⏰</div>
+      <h2 style="font-family:'Fraunces',serif;font-size:2rem;margin-bottom:12px;">Access expired</h2>
+      <p style="color:rgba(255,255,255,0.5);margin-bottom:32px;max-width:360px;line-height:1.6;">Your 6-month access period has ended. Contact your teacher to purchase a new code.</p>
+    `;
+    document.getElementById('accessDenied').classList.add('show');
+    return;
+  }
+
+  // Valid session — show app
+  document.getElementById('appLayout').style.display = 'flex';
+
+  // Fill user info
+  document.getElementById('userAvatar').textContent = session.name.charAt(0).toUpperCase();
+  document.getElementById('userName').textContent = session.name;
+
+  // Determine book
+  const level = bookParam || session.level || 'a0';
+  currentBook = BOOKS[level] || BOOKS['a0'];
+  document.getElementById('userBook').textContent = currentBook.name;
+  document.getElementById('mainTitle').textContent = currentBook.name;
+  document.getElementById('mainSub').textContent = `${currentBook.units.reduce((a,u) => a + u.tracks.length, 0)} audio tracks across ${currentBook.units.length} units`;
+
+  // Expiry display
+  document.getElementById('expiryDate').textContent = expiry.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  const daysLeft = Math.max(0, Math.ceil((expiry - new Date()) / (1000*60*60*24)));
+  const pct = Math.min(100, Math.round((daysLeft / 180) * 100));
+  document.getElementById('expiryProgress').style.width = pct + '%';
+
+  // Build sidebar + content
+  buildUI(level);
+
+  // Auto-play if QR track specified
+  if (trackParam) {
+    const [unit, track] = trackParam.split('-');
+    setTimeout(() => playByIds(level, unit, track), 500);
+  }
+
+  // Restore redirect if needed
+  const redirect = localStorage.getItem('qr_redirect');
+  if (redirect) { localStorage.removeItem('qr_redirect'); }
+});
+
+function buildUI(level) {
+  const nav = document.getElementById('sidebarNav');
+  const content = document.getElementById('unitsContainer');
+  nav.innerHTML = '';
+  content.innerHTML = '';
+
+  nav.innerHTML = `<div class="nav-section-label">UNITS</div>`;
+
+  currentBook.units.forEach((unit, ui) => {
+    // Sidebar button
+    const btn = document.createElement('button');
+    btn.className = 'unit-btn' + (ui === 0 ? ' active' : '');
+    btn.id = `navBtn-${ui}`;
+    btn.innerHTML = `<span class="u-num" style="background:${unit.color}22;color:${unit.color};">${unit.num}</span>${unit.title}`;
+    btn.onclick = () => switchUnit(ui);
+    nav.appendChild(btn);
+
+    // Content section
+    const sec = document.createElement('div');
+    sec.className = 'unit-section' + (ui === 0 ? ' active' : '');
+    sec.id = `unit-${ui}`;
+    sec.innerHTML = `
+      <div class="unit-header">
+        <div class="unit-color-dot" style="background:${unit.color};"></div>
+        <div>
+          <div class="unit-title">Unit ${unit.num} — ${unit.title}</div>
+          <div class="unit-subtitle">${unit.tracks.length} tracks</div>
+        </div>
+        <span class="track-count">${unit.tracks.length} tracks</span>
+      </div>
+      <div class="tracks-list" id="tracks-${ui}"></div>
+    `;
+    content.appendChild(sec);
+
+    // Track items
+    const trackList = sec.querySelector(`#tracks-${ui}`);
+    unit.tracks.forEach((track, ti) => {
+      const item = document.createElement('div');
+      item.className = 'track-item';
+      item.id = `track-${ui}-${ti}`;
+      item.innerHTML = `
+        <button class="track-play-btn" onclick="playTrack(${ui}, ${ti}, event)">▶</button>
+        <div class="track-info">
+          <div class="track-num">TRACK ${track.id}</div>
+          <div class="track-name">${track.name}</div>
+        </div>
+        <div class="track-progress">
+          <div class="progress-track"><div class="progress-fill" id="prog-${ui}-${ti}"></div></div>
+          <div class="track-time" id="time-${ui}-${ti}">0:00</div>
+        </div>
+      `;
+      trackList.appendChild(item);
+    });
+  });
+
+  // Build flat track list for prev/next
+  allTracks = [];
+  currentBook.units.forEach((unit, ui) => {
+    unit.tracks.forEach((track, ti) => {
+      allTracks.push({ ui, ti, track, unit });
+    });
+  });
+}
+
+function switchUnit(ui) {
+  document.querySelectorAll('.unit-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`unit-${ui}`).classList.add('active');
+  document.getElementById(`navBtn-${ui}`).classList.add('active');
+  activeUnit = ui;
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function playTrack(ui, ti, e) {
+  if(e) e.stopPropagation();
+  // Clear previously playing
+  document.querySelectorAll('.track-item').forEach(el => el.classList.remove('playing'));
+  document.querySelectorAll('.track-play-btn').forEach(el => el.textContent = '▶');
+
+  const unit = currentBook.units[ui];
+  const track = unit.tracks[ti];
+
+  // Mark as playing
+  const item = document.getElementById(`track-${ui}-${ti}`);
+  item.classList.add('playing');
+  item.querySelector('.track-play-btn').textContent = '⏸';
+
+  // Find global index
+  currentTrackIndex = allTracks.findIndex(t => t.ui === ui && t.ti === ti);
+
+  // Player bar
+  document.getElementById('playerTrackNum').textContent = `TRACK ${track.id}`;
+  document.getElementById('playerTrackName').textContent = track.name;
+  document.getElementById('playerBar').classList.add('visible');
+  document.getElementById('mainPlayBtn').textContent = '⏸';
+
+  // Audio
+  const level = session?.level || 'a0';
+  audio.src = getAudioUrl(level, track.id);
+  audio.load();
+  audio.play().catch(() => {});
+  isPlaying = true;
+
+  // Switch to this unit in sidebar
+  if (activeUnit !== ui) switchUnit(ui);
+}
+
+function playByIds(level, unitNum, trackId) {
+  const ui = currentBook.units.findIndex(u => u.num === parseInt(unitNum));
+  if (ui < 0) return;
+  const ti = currentBook.units[ui].tracks.findIndex(t => t.id === trackId);
+  if (ti < 0) return;
+  playTrack(ui, ti, null);
+}
+
+function togglePlay() {
+  if (!audio.src || audio.src === location.href) return;
+  if (isPlaying) { audio.pause(); isPlaying = false; document.getElementById('mainPlayBtn').textContent = '▶'; }
+  else { audio.play(); isPlaying = true; document.getElementById('mainPlayBtn').textContent = '⏸'; }
+}
+
+function skipTrack(dir) {
+  const next = currentTrackIndex + dir;
+  if (next < 0 || next >= allTracks.length) return;
+  const {ui, ti} = allTracks[next];
+  playTrack(ui, ti, null);
+}
+
+function cycleSpeed() {
+  speedIdx = (speedIdx + 1) % speeds.length;
+  audio.playbackRate = speeds[speedIdx];
+  document.getElementById('speedBtn').textContent = speeds[speedIdx] + '×';
+}
+
+function seekTo(e, bar) {
+  const rect = bar.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  if (audio.duration) audio.currentTime = pct * audio.duration;
+}
+
+function fmtTime(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+// Audio events
+audio.addEventListener('timeupdate', () => {
+  const pct = audio.duration ? (audio.currentTime / audio.duration * 100) : 0;
+  document.getElementById('playerProgress').style.width = pct + '%';
+  document.getElementById('playerCurrent').textContent = fmtTime(audio.currentTime);
+  // Update track progress
+  if (currentTrackIndex >= 0) {
+    const {ui, ti} = allTracks[currentTrackIndex];
+    const prog = document.getElementById(`prog-${ui}-${ti}`);
+    const time = document.getElementById(`time-${ui}-${ti}`);
+    if (prog) prog.style.width = pct + '%';
+    if (time) time.textContent = fmtTime(audio.currentTime);
+  }
+});
+
+audio.addEventListener('loadedmetadata', () => {
+  document.getElementById('playerTotal').textContent = fmtTime(audio.duration);
+});
+
+audio.addEventListener('ended', () => {
+  isPlaying = false;
+  document.getElementById('mainPlayBtn').textContent = '▶';
+  // Auto-advance
+  skipTrack(1);
+});
+
+audio.addEventListener('play',  () => { isPlaying = true;  document.getElementById('mainPlayBtn').textContent = '⏸'; });
+audio.addEventListener('pause', () => { isPlaying = false; document.getElementById('mainPlayBtn').textContent = '▶'; });
+</script>
+</body>
+</html>

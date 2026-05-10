@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — QuickRebas</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#E8A04C;--ink:#0F1218;--ink2:#161C26;--white:#fff;--border:rgba(255,255,255,0.08);--red:#F87171;--green:#4ADE80;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Montserrat',sans-serif;background:var(--ink);color:var(--white);min-height:100vh;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;flex-shrink:0;background:var(--ink2);border-right:1px solid var(--border);padding:28px 20px;display:flex;flex-direction:column;}
+.logo{font-weight:900;font-size:0.9rem;margin-bottom:8px;}
+.logo span{color:rgba(255,255,255,0.25);}
+.logo .dot{color:var(--gold);}
+.admin-badge{display:inline-block;background:rgba(232,160,76,0.15);color:var(--gold);font-size:0.6rem;font-weight:700;letter-spacing:0.15em;padding:3px 8px;border-radius:4px;margin-bottom:32px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:4px;transition:all 0.2s;border:none;background:transparent;width:100%;text-align:left;}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:white;}
+.nav-item.active{background:rgba(232,160,76,0.1);color:var(--gold);}
+.sidebar-footer{margin-top:auto;}
+.main{flex:1;padding:40px 48px;overflow-y:auto;}
+.page{display:none;}.page.active{display:block;}
+h1{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;margin-bottom:6px;}
+.sub{font-size:0.82rem;color:rgba(255,255,255,0.4);margin-bottom:36px;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px;}
+.stat-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.stat-label{font-size:0.65rem;font-weight:700;letter-spacing:0.2em;color:rgba(255,255,255,0.35);margin-bottom:8px;}
+.stat-val{font-size:2rem;font-weight:800;}
+.table-wrap{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:0.65rem;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.3);padding:14px 20px;text-align:left;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);}
+td{font-size:0.8rem;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;}
+.status-active{background:rgba(74,222,128,0.12);color:var(--green);}
+.status-expired{background:rgba(248,113,113,0.12);color:var(--red);}
+.status-unused{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.btn{padding:10px 20px;border-radius:8px;border:none;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s;}
+.btn-primary{background:var(--gold);color:var(--ink);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,160,76,0.3);}
+.btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);}
+.btn-outline:hover{border-color:rgba(255,255,255,0.4);color:white;}
+.btn-danger{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--red);}
+.btn-sm{padding:6px 12px;font-size:0.7rem;}
+.gen-form{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:24px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end;}
+.form-group label{display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.4);margin-bottom:8px;}
+.form-group select,.form-group input{width:100%;padding:12px 14px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:white;font-family:'Montserrat',sans-serif;font-size:0.82rem;outline:none;}
+.form-group select option{background:#1a2030;}
+.codes-output{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:16px;font-family:monospace;font-size:0.8rem;line-height:1.8;max-height:300px;overflow-y:auto;white-space:pre-wrap;color:rgba(255,255,255,0.7);display:none;margin-top:16px;}
+.codes-output.show{display:block;}
+.search-row{display:flex;gap:12px;margin-bottom:20px;}
+.search-input{flex:1;padding:11px 16px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:white;font-family:'Montserrat',sans-serif;font-size:0.82rem;outline:none;}
+.filter-sel{padding:11px 14px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:white;font-family:'Montserrat',sans-serif;font-size:0.82rem;outline:none;}
+.alert{padding:14px 18px;border-radius:10px;margin-bottom:20px;font-size:0.85rem;font-weight:600;display:none;}
+.alert.success{background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);color:var(--green);}
+.alert.error{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);color:var(--red);}
+.alert.show{display:block;}
+.login-screen{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:24px;z-index:200;}
+.login-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:100%;max-width:400px;text-align:center;}
+.login-card h2{font-family:'Fraunces',serif;font-size:1.8rem;margin-bottom:8px;}
+.login-sub{font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:32px;}
+.login-input{width:100%;padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:white;font-family:'Montserrat',sans-serif;font-size:0.9rem;outline:none;text-align:center;margin-bottom:16px;}
+.login-btn{width:100%;padding:16px;border-radius:10px;border:none;background:var(--gold);color:var(--ink);font-family:'Montserrat',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;}
+.logout-btn{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.4);font-family:'Montserrat',sans-serif;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.logout-btn:hover{border-color:rgba(248,113,113,0.4);color:rgba(248,113,113,0.8);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div style="font-size:2rem;margin-bottom:16px;">🔐</div>
+    <h2>Admin access</h2>
+    <p class="login-sub">QuickRebas teacher dashboard</p>
+    <input type="password" class="login-input" id="adminPassInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">Sign in</button>
+    <p style="font-size:0.72rem;color:rgba(255,255,255,0.2);margin-top:16px;">Default: <code style="color:rgba(255,255,255,0.4);">quickrebas2025</code></p>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div class="layout" id="adminApp" style="display:none;">
+  <aside class="sidebar">
+    <div class="logo"><span>QUICK</span>REBAS<span class="dot">·</span></div>
+    <div class="admin-badge">ADMIN</div>
+    <button class="nav-item active" onclick="showPage('codes',this)">🔑 Manage codes</button>
+    <button class="nav-item" onclick="showPage('students',this)">👥 Students</button>
+    <button class="nav-item" onclick="showPage('generate',this)">✨ Generate codes</button>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">← Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- CODES -->
+    <div class="page active" id="page-codes">
+      <h1>Access Codes</h1>
+      <p class="sub">All codes — their status and which student activated them.</p>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-label">TOTAL</div><div class="stat-val" id="statTotal">—</div></div>
+        <div class="stat-card"><div class="stat-label">ACTIVE</div><div class="stat-val" style="color:var(--green);" id="statActive">—</div></div>
+        <div class="stat-card"><div class="stat-label">UNUSED</div><div class="stat-val" style="color:var(--gold);" id="statUnused">—</div></div>
+        <div class="stat-card"><div class="stat-label">EXPIRED</div><div class="stat-val" style="color:var(--red);" id="statExpired">—</div></div>
+      </div>
+      <div class="search-row">
+        <input class="search-input" placeholder="Search by code, name or email…" oninput="filterCodes(this.value)">
+        <select class="filter-sel" onchange="filterByStatus(this.value)">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="unused">Unused</option>
+          <option value="expired">Expired</option>
+        </select>
+        <button class="btn btn-outline" onclick="loadCodes()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>CODE</th><th>BOOK</th><th>STUDENT</th><th>EMAIL</th><th>ACTIVATED</th><th>EXPIRES</th><th>STATUS</th><th></th></tr></thead>
+          <tbody id="codesBody"><tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,0.3);padding:40px;">Click Refresh to load codes</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div class="page" id="page-students">
+      <h1>Students</h1>
+      <p class="sub">All registered students and their access status.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>NAME</th><th>EMAIL</th><th>BOOK</th><th>CODE</th><th>ACTIVATED</th><th>EXPIRES</th></tr></thead>
+          <tbody id="studentsBody"><tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:40px;">Click to load</td></tr></tbody>
+        </table>
+      </div>
+      <button class="btn btn-outline" onclick="loadStudents()">↻ Load students</button>
+    </div>
+
+    <!-- GENERATE -->
+    <div class="page" id="page-generate">
+      <h1>Generate Codes</h1>
+      <p class="sub">Create new access codes. They are saved instantly to the platform database.</p>
+
+      <div class="alert" id="genAlert"></div>
+
+      <div class="gen-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>BOOK LEVEL</label>
+            <select id="genBook">
+              <option value="A0">A0 — Starter</option>
+              <option value="A1">A1 — Elementary</option>
+              <option value="A2">A2 — Pre-Intermediate</option>
+              <option value="B1">B1 — Intermediate</option>
+              <option value="B2">B2 — Upper-Intermediate</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>QUANTITY</label>
+            <input type="number" id="genQty" value="30" min="1" max="500">
+          </div>
+          <button class="btn btn-primary" id="genBtn" onclick="generateCodes()" style="height:44px;">Generate &amp; Save</button>
+        </div>
+        <div class="codes-output" id="genOutput"></div>
+      </div>
+
+      <div id="genActions" style="display:none;gap:12px;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="copyCodes()">📋 Copy all codes</button>
+        <button class="btn btn-outline" onclick="downloadCodes()">⬇ Download CSV</button>
+      </div>
+
+      <div style="margin-top:36px;padding:24px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;">
+        <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.3);margin-bottom:12px;">CODE FORMAT</div>
+        <div style="font-family:monospace;font-size:1rem;color:var(--gold);margin-bottom:8px;">QR-A1-7X4K-9M2P</div>
+        <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);line-height:1.7;">
+          Codes are generated and saved to the platform database instantly — no Google Sheet needed.<br>
+          Download the CSV to give to your printer.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+var API      = '/api';
+var adminPass = '';
+var allCodes  = [];
+var genCodes  = [];
+
+// ── LOGIN ──
+function login() {
+  var pass = document.getElementById('adminPassInput').value;
+  if (!pass) return;
+  adminPass = pass;
+
+  // Test the password by making a real API call
+  fetch(API + '?action=listCodes&adminPass=' + encodeURIComponent(pass))
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.status === 'error' && data.message.toLowerCase().includes('password')) {
+        document.getElementById('adminPassInput').style.borderColor = '#F87171';
+        setTimeout(function(){ document.getElementById('adminPassInput').style.borderColor = ''; }, 2000);
+        adminPass = '';
+      } else {
+        sessionStorage.setItem('qr_admin', pass);
+        showApp(data.codes || []);
+      }
+    })
+    .catch(function() {
+      // API might not be deployed yet — allow login for setup
+      sessionStorage.setItem('qr_admin', pass);
+      showApp([]);
+    });
+}
+
+function showApp(codes) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'flex';
+  allCodes = codes;
+  renderCodes(allCodes);
+}
+
+function logout() {
+  sessionStorage.removeItem('qr_admin');
+  window.location.reload();
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  var saved = sessionStorage.getItem('qr_admin');
+  if (saved) { adminPass = saved; loadCodes(); }
+});
+
+document.getElementById('adminPassInput').addEventListener('keydown', function(e){
+  if(e.key==='Enter') login();
+});
+
+// ── NAVIGATION ──
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('page-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'students') loadStudents();
+}
+
+// ── LOAD CODES ──
+function loadCodes() {
+  var pass = adminPass || sessionStorage.getItem('qr_admin') || '';
+
+  fetch(API + '?action=listCodes&adminPass=' + encodeURIComponent(pass))
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.status === 'ok') {
+        allCodes = data.codes || [];
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminApp').style.display = 'flex';
+        renderCodes(allCodes);
+      }
+    })
+    .catch(function(){});
+}
+
+function renderCodes(data) {
+  document.getElementById('statTotal').textContent   = data.length;
+  document.getElementById('statActive').textContent  = data.filter(function(d){ return d.status==='active'; }).length;
+  document.getElementById('statUnused').textContent  = data.filter(function(d){ return d.status==='unused'; }).length;
+  document.getElementById('statExpired').textContent = data.filter(function(d){ return d.status==='expired'; }).length;
+
+  var tbody = document.getElementById('codesBody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,0.3);padding:40px;">No codes found. Generate some first!</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(function(row) {
+    var badge = row.status === 'active'
+      ? '<span class="status-badge status-active"><span class="sdot"></span>Active</span>'
+      : row.status === 'expired'
+      ? '<span class="status-badge status-expired"><span class="sdot"></span>Expired</span>'
+      : '<span class="status-badge status-unused"><span class="sdot"></span>Unused</span>';
+    return '<tr>'
+      + '<td style="font-family:monospace;font-size:0.78rem;color:var(--gold);">' + row.code + '</td>'
+      + '<td>' + row.book + '</td>'
+      + '<td>' + (row.student||'—') + '</td>'
+      + '<td style="color:rgba(255,255,255,0.5);">' + (row.email||'—') + '</td>'
+      + '<td style="color:rgba(255,255,255,0.4);font-size:0.75rem;">' + (row.activated||'—') + '</td>'
+      + '<td style="color:rgba(255,255,255,0.4);font-size:0.75rem;">' + (row.expires||'—') + '</td>'
+      + '<td>' + badge + '</td>'
+      + '<td><button class="btn btn-sm btn-danger" onclick="revokeCode(\'' + row.code + '\')">Revoke</button></td>'
+      + '</tr>';
+  }).join('');
+}
+
+function filterCodes(q) {
+  var f = allCodes.filter(function(r){
+    return r.code.toLowerCase().includes(q.toLowerCase())
+        || (r.student||'').toLowerCase().includes(q.toLowerCase())
+        || (r.email||'').toLowerCase().includes(q.toLowerCase());
+  });
+  renderCodes(f);
+}
+
+function filterByStatus(st) {
+  renderCodes(st ? allCodes.filter(function(r){ return r.status===st; }) : allCodes);
+}
+
+function revokeCode(code) {
+  if (!confirm('Revoke ' + code + '? This ends the student\'s access immediately.')) return;
+  var pass = adminPass || sessionStorage.getItem('qr_admin') || '';
+  fetch(API + '?action=revoke&code=' + encodeURIComponent(code) + '&adminPass=' + encodeURIComponent(pass))
+    .then(function(r){ return r.json(); })
+    .then(function(){ loadCodes(); })
+    .catch(function(){});
+}
+
+// ── LOAD STUDENTS ──
+function loadStudents() {
+  var pass = adminPass || sessionStorage.getItem('qr_admin') || '';
+  fetch(API + '?action=listStudents&adminPass=' + encodeURIComponent(pass))
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      var students = data.students || [];
+      var tbody = document.getElementById('studentsBody');
+      if (!students.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:40px;">No students yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = students.map(function(s){
+        var exp = s.expiresAt ? new Date(s.expiresAt).toLocaleDateString('en-GB') : '—';
+        var act = s.activatedAt ? new Date(s.activatedAt).toLocaleDateString('en-GB') : '—';
+        return '<tr>'
+          + '<td>' + s.name + '</td>'
+          + '<td style="color:rgba(255,255,255,0.5);">' + s.email + '</td>'
+          + '<td>' + (s.book||'') + '</td>'
+          + '<td style="font-family:monospace;font-size:0.75rem;color:var(--gold);">' + s.code + '</td>'
+          + '<td style="color:rgba(255,255,255,0.4);font-size:0.75rem;">' + act + '</td>'
+          + '<td style="color:rgba(255,255,255,0.4);font-size:0.75rem;">' + exp + '</td>'
+          + '</tr>';
+      }).join('');
+    })
+    .catch(function(){});
+}
+
+// ── GENERATE CODES ──
+function generateCodes() {
+  var book = document.getElementById('genBook').value;
+  var qty  = parseInt(document.getElementById('genQty').value) || 10;
+  var btn  = document.getElementById('genBtn');
+  var pass = adminPass || sessionStorage.getItem('qr_admin') || '';
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  document.getElementById('genAlert').classList.remove('show','success','error');
+
+  fetch(API + '?action=generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ book: book, qty: qty, adminPass: pass })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    if (data.status === 'ok') {
+      genCodes = data.codes;
+      document.getElementById('genOutput').textContent = genCodes.join('\n');
+      document.getElementById('genOutput').classList.add('show');
+      document.getElementById('genActions').style.display = 'flex';
+
+      var alert = document.getElementById('genAlert');
+      alert.textContent = data.count + ' codes generated and saved to the platform database!';
+      alert.className = 'alert success show';
+    } else {
+      var alert = document.getElementById('genAlert');
+      alert.textContent = 'Error: ' + (data.message || 'Unknown error');
+      alert.className = 'alert error show';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Generate & Save';
+  })
+  .catch(function(e) {
+    var alert = document.getElementById('genAlert');
+    alert.textContent = 'Connection error. Is the platform deployed correctly?';
+    alert.className = 'alert error show';
+    btn.disabled = false;
+    btn.textContent = 'Generate & Save';
+  });
+}
+
+function copyCodes() {
+  navigator.clipboard.writeText(genCodes.join('\n'));
+  alert(genCodes.length + ' codes copied to clipboard!');
+}
+
+function downloadCodes() {
+  var book = document.getElementById('genBook').value;
+  var csv  = 'Code,Book,Status\n' + genCodes.map(function(c){ return c + ',' + book + ',unused'; }).join('\n');
+  var blob = new Blob([csv], { type:'text/csv' });
+  var a    = document.createElement('a');
+  a.href   = URL.createObjectURL(blob);
+  a.download = 'quickrebas-codes-' + book + '-' + Date.now() + '.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
