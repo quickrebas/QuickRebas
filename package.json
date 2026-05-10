@@ -1,5 +1,8 @@
 {
   "name": "quickrebas",
   "version": "2.0.0",
-  "description": "QuickRebas Audio Platform"
+  "description": "QuickRebas Audio Platform",
+  "dependencies": {
+    "@netlify/blobs": "^7.0.0"
+  }
 }
