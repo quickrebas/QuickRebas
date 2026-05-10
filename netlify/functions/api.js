@@ -1,7 +1,6 @@
-// QuickRebas API v6
-// Passes siteID + token explicitly to @netlify/blobs
+// QuickRebas API v7 — uses Supabase (free, reliable, zero config issues)
 
-const { getStore } = require('@netlify/blobs');
+const https = require('https');
 
 function res(data) {
   return {
@@ -36,52 +35,65 @@ function addMonths(n) {
   return d.toISOString();
 }
 
-// ── Get the store with explicit credentials ───────────────────────────────
-function store() {
-  const siteID = process.env.QR_SITE_ID
-               || process.env.NETLIFY_SITE_ID;
-  const token  = process.env.NETLIFY_TOKEN
-               || process.env.NETLIFY_ACCESS_TOKEN
-               || process.env.TOKEN;
+// ── Supabase REST API ─────────────────────────────────────────────────────────
+function supaReq(method, path, body) {
+  const url   = process.env.SUPABASE_URL;
+  const key   = process.env.SUPABASE_KEY;
+  if (!url || !key) throw new Error('SUPABASE_URL or SUPABASE_KEY not set');
 
-  if (!siteID || !token) {
-    throw new Error('Missing siteID or token. Set NETLIFY_TOKEN in environment variables.');
-  }
+  const host     = url.replace('https://', '');
+  const bodyStr  = body ? JSON.stringify(body) : null;
 
-  return getStore({
-    name: 'quickrebas',
-    siteID,
-    token,
-    consistency: 'strong',
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: host,
+      path: '/rest/v1/' + path,
+      method,
+      headers: {
+        'apikey': key,
+        'Authorization': 'Bearer ' + key,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+    };
+    if (bodyStr) options.headers['Content-Length'] = Buffer.byteLength(bodyStr);
+
+    const req = https.request(options, (r) => {
+      let data = '';
+      r.on('data', c => data += c);
+      r.on('end', () => {
+        try { resolve({ status: r.statusCode, data: data ? JSON.parse(data) : null }); }
+        catch(e) { resolve({ status: r.statusCode, data: null }); }
+      });
+    });
+    req.on('error', reject);
+    if (bodyStr) req.write(bodyStr);
+    req.end();
   });
 }
 
-async function dbGet(key) {
-  try {
-    const val = await store().get(key, { type: 'json' });
-    return val;
-  } catch(e) {
-    console.log('dbGet error:', key, e.message);
-    return null;
-  }
+async function dbGet(table, col, val) {
+  const r = await supaReq('GET', table + '?' + col + '=eq.' + encodeURIComponent(val) + '&limit=1', null);
+  if (r.status !== 200 || !r.data || !r.data.length) return null;
+  return r.data[0];
 }
 
-async function dbSet(key, val) {
-  try {
-    await store().setJSON(key, val);
-    return true;
-  } catch(e) {
-    console.log('dbSet error:', key, e.message);
-    return false;
-  }
+async function dbInsert(table, row) {
+  const r = await supaReq('POST', table, row);
+  return r.status === 201 || r.status === 200;
 }
 
-async function getIndex() {
-  const idx = await dbGet('__index__');
-  return idx || { codes: [], students: [] };
+async function dbUpdate(table, col, val, updates) {
+  const r = await supaReq('PATCH', table + '?' + col + '=eq.' + encodeURIComponent(val), updates);
+  return r.status === 200;
 }
-async function saveIndex(idx) {
-  return dbSet('__index__', idx);
+
+async function dbList(table, filters) {
+  let path = table;
+  if (filters) path += '?' + filters;
+  const r = await supaReq('GET', path, null);
+  if (r.status !== 200) return [];
+  return r.data || [];
 }
 
 // ── HANDLER ──────────────────────────────────────────────────────────────────
@@ -98,27 +110,10 @@ exports.handler = async (event) => {
   // PING
   if (action === 'ping') {
     try {
-      await store().setJSON('__ping__', { t: Date.now() });
-      const back = await store().get('__ping__', { type: 'json' });
-      const idx  = await getIndex();
-      return res({
-        status: 'ok',
-        message: 'QuickRebas API v6',
-        blobsWorking: !!back,
-        indexCodeCount: idx.codes.length,
-        indexStudentCount: idx.students.length,
-        siteID: process.env.QR_SITE_ID || process.env.NETLIFY_SITE_ID || 'NOT SET',
-        hasToken: !!(process.env.NETLIFY_TOKEN || process.env.NETLIFY_ACCESS_TOKEN || process.env.TOKEN),
-      });
+      const r = await supaReq('GET', 'codes?limit=1', null);
+      return res({ status: 'ok', message: 'QuickRebas API v7 — Supabase', dbWorking: r.status === 200, dbStatus: r.status });
     } catch(e) {
-      return res({
-        status: 'ok',
-        message: 'QuickRebas API v6',
-        blobsWorking: false,
-        error: e.message,
-        siteID: process.env.QR_SITE_ID || process.env.NETLIFY_SITE_ID || 'NOT SET',
-        hasToken: !!(process.env.NETLIFY_TOKEN || process.env.NETLIFY_ACCESS_TOKEN || process.env.TOKEN),
-      });
+      return res({ status: 'ok', message: 'QuickRebas API v7', dbWorking: false, error: e.message });
     }
   }
 
@@ -126,109 +121,95 @@ exports.handler = async (event) => {
   if (action === 'generate') {
     if (body.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
     const book  = (body.book || 'A0').toUpperCase();
-    const qty   = Math.min(parseInt(body.qty) || 10, 500);
+    const qty   = Math.min(parseInt(body.qty) || 10, 200);
     const now   = new Date().toISOString();
     const codes = [];
-    const idx   = await getIndex();
+
     for (let i = 0; i < qty; i++) {
       const code = mkCode(book);
-      const ok   = await dbSet('code:' + code, { code, book, status: 'unused', createdAt: now });
-      if (ok) { idx.codes.push(code); codes.push(code); }
+      const ok   = await dbInsert('codes', { code, book, status: 'unused', created_at: now });
+      if (ok) codes.push(code);
     }
-    await saveIndex(idx);
-    return res({ status: 'ok', codes, count: codes.length, totalInIndex: idx.codes.length });
+    return res({ status: 'ok', codes, count: codes.length });
   }
 
   // VERIFY
   if (action === 'verify') {
     const code = p.code;
     if (!code) return res({ status: 'invalid' });
-    const entry = await dbGet('code:' + code);
-    if (!entry)                     return res({ status: 'invalid' });
-    if (entry.status === 'active')  return res({ status: 'used' });
-    if (entry.status === 'revoked') return res({ status: 'invalid' });
-    return res({ status: 'valid', book: 'QuickRebas ' + entry.book, level: entry.book.toLowerCase() });
+    const row = await dbGet('codes', 'code', code);
+    if (!row)                      return res({ status: 'invalid' });
+    if (row.status === 'active')   return res({ status: 'used' });
+    if (row.status === 'revoked')  return res({ status: 'invalid' });
+    return res({ status: 'valid', book: 'QuickRebas ' + row.book, level: row.book.toLowerCase() });
   }
 
   // ACTIVATE
   if (action === 'activate') {
     const { code, name, email } = body;
     if (!code || !name || !email) return res({ status: 'error', message: 'Missing fields' });
-    const entry = await dbGet('code:' + code);
-    if (!entry || entry.status !== 'unused') return res({ status: 'error', message: 'Code not valid or already used' });
+    const row = await dbGet('codes', 'code', code);
+    if (!row || row.status !== 'unused') return res({ status: 'error', message: 'Code not valid or already used' });
     const now = new Date().toISOString(), expiry = addMonths(6);
-    entry.status = 'active'; entry.studentName = name; entry.email = email;
-    entry.activatedAt = now; entry.expiresAt = expiry;
-    await dbSet('code:' + code, entry);
-    const student = { name, email, book: entry.book, level: entry.book.toLowerCase(), code, activatedAt: now, expiresAt: expiry };
-    await dbSet('student:' + email, student);
-    const idx = await getIndex();
-    if (!idx.students.includes(email)) { idx.students.push(email); await saveIndex(idx); }
-    return res({ status: 'ok', expiry, book: 'QuickRebas ' + entry.book, level: entry.book.toLowerCase() });
+    await dbUpdate('codes', 'code', code, { status: 'active', student_name: name, email, activated_at: now, expires_at: expiry });
+    await dbInsert('students', { name, email, book: row.book, level: row.book.toLowerCase(), code, activated_at: now, expires_at: expiry });
+    return res({ status: 'ok', expiry, book: 'QuickRebas ' + row.book, level: row.book.toLowerCase() });
   }
 
   // SIGNIN
   if (action === 'signin') {
-    const student = await dbGet('student:' + body.email);
-    if (!student) return res({ status: 'error', message: 'No account found' });
-    if (new Date(student.expiresAt) < new Date()) return res({ status: 'error', message: 'Access expired' });
-    const ce = await dbGet('code:' + student.code);
+    const row = await dbGet('students', 'email', body.email);
+    if (!row) return res({ status: 'error', message: 'No account found' });
+    if (new Date(row.expires_at) < new Date()) return res({ status: 'error', message: 'Access expired' });
+    const ce = await dbGet('codes', 'code', row.code);
     if (!ce || ce.status === 'revoked') return res({ status: 'error', message: 'Access revoked' });
-    return res({ status: 'ok', student });
+    return res({ status: 'ok', student: { name: row.name, email: row.email, book: row.book, level: row.level, code: row.code, expiresAt: row.expires_at } });
   }
 
   // LIST CODES
   if (action === 'listCodes') {
     if (p.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
-    const idx   = await getIndex();
-    const codes = [];
-    const now   = new Date();
-    for (const key of idx.codes) {
-      const entry = await dbGet('code:' + key);
-      if (!entry) continue;
-      if (entry.status === 'active' && entry.expiresAt && new Date(entry.expiresAt) < now) {
-        entry.status = 'expired';
-        await dbSet('code:' + key, entry);
-      }
-      codes.push({ code: entry.code, book: entry.book, status: entry.status, student: entry.studentName || '', email: entry.email || '', activated: fmt(entry.activatedAt), expires: fmt(entry.expiresAt) });
-    }
+    const rows = await dbList('codes', 'order=created_at.desc');
+    const codes = rows.map(r => ({
+      code: r.code, book: r.book, status: r.status,
+      student: r.student_name || '', email: r.email || '',
+      activated: fmt(r.activated_at), expires: fmt(r.expires_at),
+    }));
     return res({ status: 'ok', codes, total: codes.length });
   }
 
   // LIST STUDENTS
   if (action === 'listStudents') {
     if (p.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
-    const idx = await getIndex();
-    const students = [];
-    for (const email of idx.students) {
-      const s = await dbGet('student:' + email);
-      if (s) students.push(s);
-    }
-    return res({ status: 'ok', students });
+    const rows = await dbList('students', 'order=activated_at.desc');
+    return res({ status: 'ok', students: rows });
   }
 
   // REVOKE
   if (action === 'revoke') {
     if (p.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
-    const entry = await dbGet('code:' + p.code);
-    if (!entry) return res({ status: 'error', message: 'Code not found' });
-    entry.status = 'revoked';
-    await dbSet('code:' + p.code, entry);
+    await dbUpdate('codes', 'code', p.code, { status: 'revoked' });
     return res({ status: 'ok' });
   }
 
   // SAVE AUDIO
   if (action === 'saveAudio') {
     if (body.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
-    const saved = await dbSet('audio_urls', body.urls || {});
-    return res({ status: saved ? 'ok' : 'error' });
+    const existing = await dbGet('settings', 'key', 'audio_urls');
+    if (existing) {
+      await dbUpdate('settings', 'key', 'audio_urls', { value: JSON.stringify(body.urls || {}) });
+    } else {
+      await dbInsert('settings', { key: 'audio_urls', value: JSON.stringify(body.urls || {}) });
+    }
+    return res({ status: 'ok' });
   }
 
   // GET AUDIO
   if (action === 'getAudio') {
-    const urls = await dbGet('audio_urls');
-    return res({ status: 'ok', urls: urls || {} });
+    const row = await dbGet('settings', 'key', 'audio_urls');
+    const urls = row ? JSON.parse(row.value) : {};
+    return res({ status: 'ok', urls });
   }
 
-  return res({ status: 'ok', message: 'QuickRebas API v6' });
+  return res({ status: 'ok', message: 'QuickRebas API v7' });
 };
