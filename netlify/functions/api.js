@@ -52,7 +52,7 @@ function supaReq(method, path, body) {
         'apikey': key,
         'Authorization': 'Bearer ' + key,
         'Content-Type': 'application/json',
-        'Prefer': 'return=representation',
+        'Prefer': path.includes('on_conflict') ? 'resolution=merge-duplicates,return=representation' : 'return=representation',
       },
     };
     if (bodyStr) options.headers['Content-Length'] = Buffer.byteLength(bodyStr);
@@ -240,20 +240,27 @@ exports.handler = async (event) => {
   // SAVE AUDIO
   if (action === 'saveAudio') {
     if (body.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
-    const existing = await dbGet('settings', 'key', 'audio_urls');
-    if (existing) {
-      await dbUpdate('settings', 'key', 'audio_urls', { value: JSON.stringify(body.urls || {}) });
-    } else {
-      await dbInsert('settings', { key: 'audio_urls', value: JSON.stringify(body.urls || {}) });
-    }
-    return res({ status: 'ok' });
+    // Use upsert — inserts if not exists, updates if exists
+    const r = await supaReq('POST', 'settings?on_conflict=key', {
+      key: 'audio_urls',
+      value: JSON.stringify(body.urls || {})
+    });
+    const ok = r.status === 200 || r.status === 201;
+    return res({ status: ok ? 'ok' : 'error', httpStatus: r.status, detail: ok ? null : r.raw });
   }
 
   // GET AUDIO
   if (action === 'getAudio') {
-    const row  = await dbGet('settings', 'key', 'audio_urls');
-    const urls = row ? JSON.parse(row.value) : {};
-    return res({ status: 'ok', urls });
+    const r = await supaReq('GET', 'settings?key=eq.audio_urls&limit=1', null);
+    if (r.status !== 200 || !r.data || !r.data.length) {
+      return res({ status: 'ok', urls: {} });
+    }
+    try {
+      const urls = JSON.parse(r.data[0].value);
+      return res({ status: 'ok', urls });
+    } catch(e) {
+      return res({ status: 'ok', urls: {} });
+    }
   }
 
   return res({ status: 'ok', message: 'QuickRebas API v7' });
