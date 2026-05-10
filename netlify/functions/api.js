@@ -38,7 +38,8 @@ function addMonths(n) {
 
 // ── Get the store with explicit credentials ───────────────────────────────
 function store() {
-  const siteID = process.env.NETLIFY_SITE_ID;
+  const siteID = process.env.QR_SITE_ID
+               || process.env.NETLIFY_SITE_ID;
   const token  = process.env.NETLIFY_TOKEN
                || process.env.NETLIFY_ACCESS_TOKEN
                || process.env.TOKEN;
@@ -106,7 +107,7 @@ exports.handler = async (event) => {
         blobsWorking: !!back,
         indexCodeCount: idx.codes.length,
         indexStudentCount: idx.students.length,
-        siteID: process.env.NETLIFY_SITE_ID || 'NOT SET',
+        siteID: process.env.QR_SITE_ID || process.env.NETLIFY_SITE_ID || 'NOT SET',
         hasToken: !!(process.env.NETLIFY_TOKEN || process.env.NETLIFY_ACCESS_TOKEN || process.env.TOKEN),
       });
     } catch(e) {
@@ -115,7 +116,7 @@ exports.handler = async (event) => {
         message: 'QuickRebas API v6',
         blobsWorking: false,
         error: e.message,
-        siteID: process.env.NETLIFY_SITE_ID || 'NOT SET',
+        siteID: process.env.QR_SITE_ID || process.env.NETLIFY_SITE_ID || 'NOT SET',
         hasToken: !!(process.env.NETLIFY_TOKEN || process.env.NETLIFY_ACCESS_TOKEN || process.env.TOKEN),
       });
     }
