@@ -1,5 +1,5 @@
-// QuickRebas API v5
-// Uses @netlify/blobs official client — zero config needed on Netlify
+// QuickRebas API v6
+// Passes siteID + token explicitly to @netlify/blobs
 
 const { getStore } = require('@netlify/blobs');
 
@@ -27,7 +27,7 @@ function mkCode(book) {
 }
 function fmt(iso) {
   if (!iso) return '';
-  try { return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  try { return new Date(iso).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }); }
   catch(e) { return iso; }
 }
 function addMonths(n) {
@@ -36,25 +36,41 @@ function addMonths(n) {
   return d.toISOString();
 }
 
-// ── DB ───────────────────────────────────────────────────────────────────────
+// ── Get the store with explicit credentials ───────────────────────────────
+function store() {
+  const siteID = process.env.NETLIFY_SITE_ID;
+  const token  = process.env.NETLIFY_TOKEN
+               || process.env.NETLIFY_ACCESS_TOKEN
+               || process.env.TOKEN;
+
+  if (!siteID || !token) {
+    throw new Error('Missing siteID or token. Set NETLIFY_TOKEN in environment variables.');
+  }
+
+  return getStore({
+    name: 'quickrebas',
+    siteID,
+    token,
+    consistency: 'strong',
+  });
+}
+
 async function dbGet(key) {
   try {
-    const store = getStore({ name: 'quickrebas', consistency: 'strong' });
-    const val = await store.get(key, { type: 'json' });
+    const val = await store().get(key, { type: 'json' });
     return val;
   } catch(e) {
-    console.log('dbGet error for key', key, ':', e.message);
+    console.log('dbGet error:', key, e.message);
     return null;
   }
 }
 
 async function dbSet(key, val) {
   try {
-    const store = getStore({ name: 'quickrebas', consistency: 'strong' });
-    await store.setJSON(key, val);
+    await store().setJSON(key, val);
     return true;
   } catch(e) {
-    console.log('dbSet error for key', key, ':', e.message);
+    console.log('dbSet error:', key, e.message);
     return false;
   }
 }
@@ -81,62 +97,50 @@ exports.handler = async (event) => {
   // PING
   if (action === 'ping') {
     try {
-      const store = getStore({ name: 'quickrebas', consistency: 'strong' });
-      await store.setJSON('__ping__', { t: Date.now() });
-      const back = await store.get('__ping__', { type: 'json' });
+      await store().setJSON('__ping__', { t: Date.now() });
+      const back = await store().get('__ping__', { type: 'json' });
       const idx  = await getIndex();
       return res({
-        status: 'ok', message: 'QuickRebas API v5',
+        status: 'ok',
+        message: 'QuickRebas API v6',
         blobsWorking: !!back,
         indexCodeCount: idx.codes.length,
         indexStudentCount: idx.students.length,
+        siteID: process.env.NETLIFY_SITE_ID || 'NOT SET',
+        hasToken: !!(process.env.NETLIFY_TOKEN || process.env.NETLIFY_ACCESS_TOKEN || process.env.TOKEN),
       });
     } catch(e) {
-      return res({ status: 'ok', message: 'QuickRebas API v5', blobsWorking: false, error: e.message });
+      return res({
+        status: 'ok',
+        message: 'QuickRebas API v6',
+        blobsWorking: false,
+        error: e.message,
+        siteID: process.env.NETLIFY_SITE_ID || 'NOT SET',
+        hasToken: !!(process.env.NETLIFY_TOKEN || process.env.NETLIFY_ACCESS_TOKEN || process.env.TOKEN),
+      });
     }
   }
 
   // GENERATE
   if (action === 'generate') {
     if (body.adminPass !== PASS) return res({ status: 'error', message: 'Wrong password' });
-
     const book  = (body.book || 'A0').toUpperCase();
     const qty   = Math.min(parseInt(body.qty) || 10, 500);
     const now   = new Date().toISOString();
     const codes = [];
-    const errors = [];
-
-    // Load index once
-    const idx = await getIndex();
-
+    const idx   = await getIndex();
     for (let i = 0; i < qty; i++) {
-      const code  = mkCode(book);
-      const entry = { code, book, status: 'unused', createdAt: now };
-      const saved = await dbSet('code:' + code, entry);
-      if (saved) {
-        idx.codes.push(code);
-        codes.push(code);
-      } else {
-        errors.push(code);
-      }
+      const code = mkCode(book);
+      const ok   = await dbSet('code:' + code, { code, book, status: 'unused', createdAt: now });
+      if (ok) { idx.codes.push(code); codes.push(code); }
     }
-
-    // Save index once after all codes
-    const indexSaved = await saveIndex(idx);
-
-    return res({
-      status: 'ok',
-      codes,
-      count: codes.length,
-      errors: errors.length,
-      indexSaved,
-      totalInIndex: idx.codes.length,
-    });
+    await saveIndex(idx);
+    return res({ status: 'ok', codes, count: codes.length, totalInIndex: idx.codes.length });
   }
 
   // VERIFY
   if (action === 'verify') {
-    const code  = p.code;
+    const code = p.code;
     if (!code) return res({ status: 'invalid' });
     const entry = await dbGet('code:' + code);
     if (!entry)                     return res({ status: 'invalid' });
@@ -151,8 +155,7 @@ exports.handler = async (event) => {
     if (!code || !name || !email) return res({ status: 'error', message: 'Missing fields' });
     const entry = await dbGet('code:' + code);
     if (!entry || entry.status !== 'unused') return res({ status: 'error', message: 'Code not valid or already used' });
-    const now    = new Date().toISOString();
-    const expiry = addMonths(6);
+    const now = new Date().toISOString(), expiry = addMonths(6);
     entry.status = 'active'; entry.studentName = name; entry.email = email;
     entry.activatedAt = now; entry.expiresAt = expiry;
     await dbSet('code:' + code, entry);
@@ -165,7 +168,7 @@ exports.handler = async (event) => {
 
   // SIGNIN
   if (action === 'signin') {
-    const student = await bGet('student:' + body.email);
+    const student = await dbGet('student:' + body.email);
     if (!student) return res({ status: 'error', message: 'No account found' });
     if (new Date(student.expiresAt) < new Date()) return res({ status: 'error', message: 'Access expired' });
     const ce = await dbGet('code:' + student.code);
@@ -186,11 +189,7 @@ exports.handler = async (event) => {
         entry.status = 'expired';
         await dbSet('code:' + key, entry);
       }
-      codes.push({
-        code: entry.code, book: entry.book, status: entry.status,
-        student: entry.studentName || '', email: entry.email || '',
-        activated: fmt(entry.activatedAt), expires: fmt(entry.expiresAt),
-      });
+      codes.push({ code: entry.code, book: entry.book, status: entry.status, student: entry.studentName || '', email: entry.email || '', activated: fmt(entry.activatedAt), expires: fmt(entry.expiresAt) });
     }
     return res({ status: 'ok', codes, total: codes.length });
   }
@@ -230,5 +229,5 @@ exports.handler = async (event) => {
     return res({ status: 'ok', urls: urls || {} });
   }
 
-  return res({ status: 'ok', message: 'QuickRebas API v5' });
+  return res({ status: 'ok', message: 'QuickRebas API v6' });
 };
