@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Dashboard — QuickRebas</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#E8A04C;--ink:#0F1218;--ink2:#161C26;--white:#fff;--border:rgba(255,255,255,0.08);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Montserrat',sans-serif;background:var(--ink);color:var(--white);min-height:100vh;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:260px;flex-shrink:0;background:var(--ink2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;overflow-y:auto;}
+.sb-top{padding:22px;border-bottom:1px solid var(--border);}
+.logo{font-weight:900;font-size:0.92rem;letter-spacing:-0.02em;margin-bottom:16px;}
+.logo .q{color:rgba(255,255,255,0.25);}.logo .dot{color:var(--gold);}
+.avatar{width:36px;height:36px;border-radius:50%;background:rgba(232,160,76,0.2);border:1.5px solid rgba(232,160,76,0.4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.82rem;color:var(--gold);margin-bottom:7px;}
+.user-name{font-size:0.82rem;font-weight:700;margin-bottom:2px;}
+.user-book{font-size:0.68rem;color:rgba(255,255,255,0.38);}
+.expiry-pill{margin:12px 22px;padding:9px 13px;border-radius:9px;background:rgba(232,160,76,0.08);border:1px solid rgba(232,160,76,0.2);}
+.ep-lbl{font-size:0.57rem;letter-spacing:0.18em;color:var(--gold);font-weight:700;}
+.ep-val{font-size:0.78rem;font-weight:600;margin-top:2px;}
+.ep-bar{height:3px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:7px;overflow:hidden;}
+.ep-fill{height:100%;border-radius:2px;background:var(--gold);}
+.sb-nav{padding:10px 12px;flex:1;}
+.nav-lbl{font-size:0.57rem;letter-spacing:0.2em;color:rgba(255,255,255,0.24);font-weight:700;padding:0 8px;margin:10px 0 5px;}
+.unit-btn{width:100%;padding:8px 9px;border-radius:7px;border:none;background:transparent;color:rgba(255,255,255,0.48);cursor:pointer;font-family:'Montserrat',sans-serif;font-size:0.73rem;font-weight:600;text-align:left;display:flex;align-items:center;gap:8px;transition:all 0.2s;margin-bottom:2px;}
+.unit-btn:hover{background:rgba(255,255,255,0.06);color:white;}
+.unit-btn.active{background:rgba(232,160,76,0.12);color:var(--gold);}
+.u-num{width:21px;height:21px;border-radius:5px;font-size:0.66rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.08);}
+.unit-btn.active .u-num{background:rgba(232,160,76,0.2);color:var(--gold);}
+.sb-foot{padding:14px 22px;border-top:1px solid var(--border);}
+.logout-btn{width:100%;padding:9px;border-radius:7px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.32);font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;}
+.main{margin-left:260px;padding:36px 36px 120px;}
+.page-hdr{margin-bottom:24px;}
+.page-hdr h1{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:5px;}
+.page-hdr .sub{font-size:0.8rem;color:rgba(255,255,255,0.38);}
+.unit-sec{display:none;}.unit-sec.active{display:block;}
+.unit-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.u-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.u-ttl{font-size:0.92rem;font-weight:800;}
+.u-sub{font-size:0.7rem;color:rgba(255,255,255,0.38);margin-top:2px;}
+.u-cnt{margin-left:auto;font-size:0.68rem;color:rgba(255,255,255,0.28);}
+.tracks{display:flex;flex-direction:column;gap:6px;}
+.track-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:9px;background:rgba(255,255,255,0.03);border:1px solid var(--border);transition:all 0.2s;cursor:pointer;}
+.track-item:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.14);}
+.track-item.playing{background:rgba(232,160,76,0.08);border-color:rgba(232,160,76,0.3);}
+.track-item.no-audio{opacity:0.4;cursor:default;}
+.play-btn{width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.08);color:white;transition:all 0.2s;font-size:0.85rem;}
+.play-btn:hover{background:rgba(232,160,76,0.2);}
+.track-item.playing .play-btn{background:var(--gold);color:var(--ink);}
+.t-info{flex:1;min-width:0;}
+.t-num{font-size:0.6rem;letter-spacing:0.15em;color:rgba(255,255,255,0.28);font-weight:700;margin-bottom:2px;}
+.t-name{font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-nurl{font-size:0.65rem;color:rgba(255,255,255,0.18);margin-top:2px;}
+.t-prog{flex:1;max-width:160px;}
+.prog-bar{height:3px;background:rgba(255,255,255,0.1);border-radius:2px;cursor:pointer;}
+.prog-fill{height:100%;border-radius:2px;background:var(--gold);width:0%;transition:width 0.1s linear;}
+.t-time{font-size:0.62rem;color:rgba(255,255,255,0.28);margin-top:3px;font-family:monospace;}
+.player-bar{position:fixed;bottom:0;left:260px;right:0;background:rgba(15,18,24,0.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:12px 26px;display:flex;align-items:center;gap:18px;transform:translateY(100%);transition:transform 0.3s;z-index:40;}
+.player-bar.visible{transform:translateY(0);}
+.p-now{flex:1;min-width:0;}
+.p-num{font-size:0.58rem;letter-spacing:0.15em;color:var(--gold);font-weight:700;}
+.p-name{font-size:0.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.p-ctrl{display:flex;align-items:center;gap:9px;}
+.pc{width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;background:rgba(255,255,255,0.1);color:white;font-size:0.9rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.pc.main{background:var(--gold);color:var(--ink);width:42px;height:42px;}
+.p-prog{flex:2;max-width:340px;}
+.pp-bar{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;cursor:pointer;margin-bottom:4px;}
+.pp-fill{height:100%;border-radius:2px;background:var(--gold);width:0%;transition:width 0.1s linear;}
+.pp-t{display:flex;justify-content:space-between;font-size:0.62rem;color:rgba(255,255,255,0.28);font-family:monospace;}
+.spd{background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.5);padding:5px 10px;border-radius:20px;font-family:'Montserrat',sans-serif;font-size:0.68rem;font-weight:700;cursor:pointer;}
+.denied{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:48px;}
+.denied.show{display:flex;}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);transition:transform 0.3s;}.main{margin-left:0;padding:70px 16px 110px;}.player-bar{left:0;}.t-prog{display:none;}}
+</style>
+</head>
+<body>
+
+<div class="denied" id="denied">
+  <div style="font-size:3rem;margin-bottom:18px;">🔒</div>
+  <h2 style="font-family:'Fraunces',serif;font-size:1.9rem;margin-bottom:10px;">Access required</h2>
+  <p style="color:rgba(255,255,255,0.5);margin-bottom:28px;max-width:340px;line-height:1.6;">Activate your workbook code to listen to the audio tracks.</p>
+  <a href="activate.html" style="background:var(--gold);color:var(--ink);padding:15px 38px;border-radius:50px;font-weight:800;text-decoration:none;font-size:0.9rem;">Activate my code</a>
+</div>
+
+<div class="layout" id="app" style="display:none;">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-top">
+      <div class="logo"><span class="q">QUICK</span>REBAS<span class="dot">.</span></div>
+      <div class="avatar" id="av">S</div>
+      <div class="user-name" id="uName">Student</div>
+      <div class="user-book" id="uBook">QuickRebas</div>
+    </div>
+    <div class="expiry-pill">
+      <div class="ep-lbl">ACCESS EXPIRES</div>
+      <div class="ep-val" id="expDate">-</div>
+      <div class="ep-bar"><div class="ep-fill" id="expFill" style="width:80%"></div></div>
+    </div>
+    <div class="sb-nav" id="sbNav"></div>
+    <div class="sb-foot"><button class="logout-btn" onclick="logout()">Sign out</button></div>
+  </aside>
+
+  <main class="main">
+    <div class="page-hdr">
+      <h1 id="mainTitle">My Audio Tracks</h1>
+      <p class="sub" id="mainSub">Loading...</p>
+    </div>
+    <div id="units"></div>
+  </main>
+</div>
+
+<div class="player-bar" id="pBar">
+  <div class="p-now"><div class="p-num" id="pNum">TRACK 1.1</div><div class="p-name" id="pName">Loading...</div></div>
+  <div class="p-ctrl">
+    <button class="pc" onclick="skip(-1)">&#9198;</button>
+    <button class="pc main" id="mainBtn" onclick="togglePlay()">&#9654;</button>
+    <button class="pc" onclick="skip(1)">&#9197;</button>
+  </div>
+  <div class="p-prog">
+    <div class="pp-bar" onclick="seek(event,this)"><div class="pp-fill" id="ppFill"></div></div>
+    <div class="pp-t"><span id="pCur">0:00</span><span id="pTot">0:00</span></div>
+  </div>
+  <button class="spd" onclick="cycleSpeed()" id="spdBtn">1x</button>
+</div>
+
+<audio id="aud"></audio>
+
+<script>
+var API = '/api';
+var BOOKS = {
+  a0:{name:'QuickRebas A0 - Starter',color:'#E8A04C',units:[
+    {num:1,title:'Me & My World',color:'#6B8CAE',tracks:[{id:'1.1',name:'Greetings'},{id:'1.2',name:'Greeting conversations'},{id:'1.3',name:'Numbers 0-20'},{id:'1.4',name:'Letter dictation'},{id:'1.5',name:'Number dictation'},{id:'1.6',name:'Greeting dialogue'},{id:'1.7',name:'Alphabet sounds'}]},
+    {num:2,title:'My Family',color:'#7BA081',tracks:[{id:'2.1',name:'Family members'},{id:'2.2',name:'Adjectives'},{id:'2.3',name:'Family dialogue'},{id:'2.4',name:'Possessives'}]},
+    {num:3,title:'Around the World',color:'#6B9DC2',tracks:[{id:'3.1',name:'Countries'},{id:'3.2',name:'Nationalities'},{id:'3.3',name:'To be dialogue'},{id:'3.4',name:'Countries pronunciation'},{id:'3.5',name:'Where are you from?'}]},
+    {num:4,title:'At School',color:'#7BB39A',tracks:[{id:'4.1',name:'Classroom objects'},{id:'4.2',name:'A/an'},{id:'4.3',name:'School dialogue'},{id:'4.4',name:'Plurals'},{id:'4.5',name:'What is this?'}]},
+    {num:5,title:'Daily Life',color:'#9B7AA8',tracks:[{id:'5.1',name:'Daily routine'},{id:'5.2',name:'Telling the time'},{id:'5.3',name:"Maya's day"},{id:'5.4',name:'Present simple Q&A'},{id:'5.5',name:'Time expressions'}]},
+    {num:6,title:'Food & Health',color:'#7BA081',tracks:[{id:'6.1',name:'Food vocabulary'},{id:'6.2',name:'Drinks'},{id:'6.3',name:'Cafe dialogue'},{id:'6.4',name:'Like/dislike'}]},
+    {num:7,title:'Home Sweet Home',color:'#C97B5A',tracks:[{id:'7.1',name:'Rooms & furniture'},{id:'7.2',name:'Prepositions'},{id:'7.3',name:'There is/are'},{id:'7.4',name:'House description'}]},
+    {num:8,title:'Free Time',color:'#5A9698',tracks:[{id:'8.1',name:'Hobbies'},{id:'8.2',name:'Frequency adverbs'},{id:'8.3',name:'Weekend dialogue'},{id:'8.4',name:'Like + -ing'}]},
+    {num:9,title:'Shopping & Style',color:'#C97B89',tracks:[{id:'9.1',name:'Clothes'},{id:'9.2',name:'Colours'},{id:'9.3',name:'Shop conversation'},{id:'9.4',name:'13 vs 30'}]},
+    {num:10,title:'Celebrations',color:'#8E5C9A',tracks:[{id:'10.1',name:'Months and dates'},{id:'10.2',name:'Ordinal numbers'},{id:'10.3',name:"Sara's birthday"},{id:'10.4',name:'Can/cannot'},{id:'10.5',name:'Special days dialogue'}]},
+  ]},
+  a1:{name:'QuickRebas A1 - Elementary',color:'#B5623A',units:[
+    {num:1,title:'My Life & People',color:'#B5623A',tracks:[{id:'1.1',name:'Describing people'},{id:'1.2',name:'Four descriptions'},{id:'1.3',name:'Personality adjectives'},{id:'1.4',name:"Sara's neighbour"},{id:'1.5',name:'Stress in adjectives'}]},
+    {num:2,title:'A Day in the City',color:'#4A8DB5',tracks:[{id:'2.1',name:'City places'},{id:'2.2',name:'City activities'},{id:'2.3',name:'City sounds'},{id:'2.4',name:'Phone conversation'},{id:'2.5',name:"Weak 'are'"}]},
+    {num:3,title:'Past Days',color:'#2A7A7C',tracks:[{id:'3.1',name:'Time expressions'},{id:'3.2',name:'Feelings'},{id:'3.3',name:"Sam's first day"},{id:'3.4',name:'Was strong/weak'}]},
+    {num:4,title:'My Weekend',color:'#3A7A5A',tracks:[{id:'4.1',name:'Weekend activities'},{id:'4.2',name:'Past collocations'},{id:'4.3',name:"Ana's weekend"},{id:'4.4',name:'-ed endings'}]},
+    {num:5,title:'Travel',color:'#4A5AA8',tracks:[{id:'5.1',name:'Transport'},{id:'5.2',name:'Travel vocabulary'},{id:'5.3',name:"Sara's trip"},{id:'5.4',name:'Irregular past'}]},
+    {num:6,title:'Nature & Weather',color:'#6A9A7A',tracks:[{id:'6.1',name:'Weather'},{id:'6.2',name:'Nature'},{id:'6.3',name:'Weather forecast'},{id:'6.4',name:'-er endings'}]},
+    {num:7,title:'Plans & Dreams',color:'#B84A6A',tracks:[{id:'7.1',name:'Future plans'},{id:'7.2',name:'Future expressions'},{id:'7.3',name:"Rosa's plans"},{id:'7.4',name:'Going to/gonna'}]},
+    {num:8,title:'Health & Body',color:'#2A6A9A',tracks:[{id:'8.1',name:'Body parts'},{id:'8.2',name:'Health problems'},{id:'8.3',name:'Doctor consultation'},{id:'8.4',name:'Polite intonation'}]},
+    {num:9,title:'Food & Restaurants',color:'#7A4A8A',tracks:[{id:'9.1',name:'Countable/uncountable'},{id:'9.2',name:'Restaurant vocabulary'},{id:'9.3',name:'Ordering food'},{id:'9.4',name:'Restaurant phrases'}]},
+    {num:10,title:'My Future',color:'#B8882A',tracks:[{id:'10.1',name:'Technology'},{id:'10.2',name:'Predictions'},{id:'10.3',name:'Four predictions'},{id:'10.4',name:'Will strong/weak'}]},
+  ]},
+  a2:{name:'QuickRebas A2 - Pre-Intermediate',color:'#2A6A3A',units:[
+    {num:1,title:'Media',color:'#1A6B9A',tracks:[{id:'1.1',name:'Media vocabulary'},{id:'1.2',name:'Digital communication'},{id:'1.3',name:'Social media debate'},{id:'1.4',name:'Weak forms'}]},
+    {num:2,title:'Relationships',color:'#A83A5A',tracks:[{id:'2.1',name:'Relationships'},{id:'2.2',name:'Emotions'},{id:'2.3',name:'Three conversations'},{id:'2.4',name:'Stress for emotion'}]},
+    {num:3,title:'Work',color:'#2A6A3A',tracks:[{id:'3.1',name:'Jobs'},{id:'3.2',name:'Career language'},{id:'3.3',name:'Job interview'},{id:'3.4',name:'-ing forms'}]},
+    {num:4,title:'Around Town',color:'#9A3A2A',tracks:[{id:'4.1',name:'Neighbourhood'},{id:'4.2',name:'Change vocabulary'},{id:'4.3',name:'Hometown changes'},{id:'4.4',name:'used to'}]},
+    {num:5,title:'Experiences',color:'#3A2A8A',tracks:[{id:'5.1',name:'Experience adjectives'},{id:'5.2',name:'Storytelling'},{id:'5.3',name:"Maria's experience"},{id:'5.4',name:'Superlatives'}]},
+    {num:6,title:'Health',color:'#1A8A6A',tracks:[{id:'6.1',name:'Health vocabulary'},{id:'6.2',name:'Medical expressions'},{id:'6.3',name:'Consultation'},{id:'6.4',name:'Weak modals'}]},
+    {num:7,title:'Technology',color:'#4A5A2A',tracks:[{id:'7.1',name:'Technology'},{id:'7.2',name:'Change adjectives'},{id:'7.3',name:'Tech debate'},{id:'7.4',name:'Contracted will'}]},
+    {num:8,title:'Arts',color:'#7A1A3A',tracks:[{id:'8.1',name:'Art forms'},{id:'8.2',name:'Art adjectives'},{id:'8.3',name:'Film review'},{id:'8.4',name:'Thought groups'}]},
+    {num:9,title:'Environment',color:'#0A4A6A',tracks:[{id:'9.1',name:'Environment'},{id:'9.2',name:'Actions'},{id:'9.3',name:'Climate scientist'},{id:'9.4',name:'Passive verbs'}]},
+    {num:10,title:'Global Issues',color:'#5A1A7A',tracks:[{id:'10.1',name:'Global issues'},{id:'10.2',name:'Opinions'},{id:'10.3',name:'Debate'},{id:'10.4',name:'Would in speech'}]},
+  ]},
+  b1:{name:'QuickRebas B1 - Intermediate',color:'#5C3A8A',units:[
+    {num:1,title:'Identity',color:'#5C3A8A',tracks:[{id:'1.1',name:'Identity vocabulary'},{id:'1.2',name:'Belonging'},{id:'1.3',name:'Identity voices'},{id:'1.4',name:'have been'}]},
+    {num:2,title:'Digital World',color:'#1A5A8A',tracks:[{id:'2.1',name:'Digital society'},{id:'2.2',name:'Ethics'},{id:'2.3',name:'Podcast'},{id:'2.4',name:"would've/could've"}]},
+    {num:3,title:'Food Culture',color:'#8A2A2A',tracks:[{id:'3.1',name:'Gastronomy'},{id:'3.2',name:'Taste'},{id:'3.3',name:'Chef Amara'},{id:'3.4',name:'Wish pronunciation'}]},
+    {num:4,title:'Sport',color:'#1A7A5A',tracks:[{id:'4.1',name:'Sport vocabulary'},{id:'4.2',name:'Achievement'},{id:'4.3',name:'Interview'},{id:'4.4',name:'Relative clauses'}]},
+    {num:5,title:'Crime & Justice',color:'#3A3A7A',tracks:[{id:'5.1',name:'Crime vocabulary'},{id:'5.2',name:'Justice'},{id:'5.3',name:'Legal debate'},{id:'5.4',name:'Gerunds'}]},
+    {num:6,title:'Science',color:'#0A6A7A',tracks:[{id:'6.1',name:'Science'},{id:'6.2',name:'Deduction modals'},{id:'6.3',name:'Scientist'},{id:'6.4',name:'Modal perfect'}]},
+    {num:7,title:'Travel',color:'#5A1A6A',tracks:[{id:'7.1',name:'Travel'},{id:'7.2',name:'Passive'},{id:'7.3',name:'Exchange'},{id:'7.4',name:'Passive groups'}]},
+    {num:8,title:'Money',color:'#6A3A1A',tracks:[{id:'8.1',name:'Economics'},{id:'8.2',name:'Reporting verbs'},{id:'8.3',name:'Interview'},{id:'8.4',name:'Reporting'}]},
+    {num:9,title:'Language',color:'#1A4A1A',tracks:[{id:'9.1',name:'Linguistics'},{id:'9.2',name:'Mixed conditionals'},{id:'9.3',name:'Discussion'},{id:'9.4',name:'Conditional stress'}]},
+    {num:10,title:'The Future',color:'#4A1A1A',tracks:[{id:'10.1',name:'Future vocabulary'},{id:'10.2',name:'Narrative tenses'},{id:'10.3',name:'Futurist talk'},{id:'10.4',name:'Thought groups'}]},
+  ]},
+  b2:{name:'QuickRebas B2 - Upper-Intermediate',color:'#1A3A6A',units:[
+    {num:1,title:'Power & Politics',color:'#1A3A6A',tracks:[{id:'1.1',name:'Political vocabulary'},{id:'1.2',name:'Rhetoric'},{id:'1.3',name:'Political speech'},{id:'1.4',name:'Inversion stress'}]},
+    {num:2,title:'Psychology',color:'#5A0A4A',tracks:[{id:'2.1',name:'Psychology'},{id:'2.2',name:'Cleft sentences'},{id:'2.3',name:'Podcast'},{id:'2.4',name:'Cleft rhythm'}]},
+    {num:3,title:'Innovation',color:'#3A5A0A',tracks:[{id:'3.1',name:'Innovation'},{id:'3.2',name:'Subjunctive'},{id:'3.3',name:'Pitch'},{id:'3.4',name:'Subjunctive vs indicative'}]},
+    {num:4,title:'Literature',color:'#5A2A6A',tracks:[{id:'4.1',name:'Literary vocabulary'},{id:'4.2',name:'Passive'},{id:'4.3',name:'Analysis'},{id:'4.4',name:'Passive patterns'}]},
+    {num:5,title:'Society',color:'#0A4A6A',tracks:[{id:'5.1',name:'Society'},{id:'5.2',name:'Discourse markers'},{id:'5.3',name:'Sociology'},{id:'5.4',name:'Discourse intonation'}]},
+    {num:6,title:'Ethics',color:'#3A1A0A',tracks:[{id:'6.1',name:'Ethics'},{id:'6.2',name:'Concession'},{id:'6.3',name:'Debate'},{id:'6.4',name:'Concession stress'}]},
+    {num:7,title:'Human Experience',color:'#1A1A5A',tracks:[{id:'7.1',name:'Philosophy'},{id:'7.2',name:'Nominalisation'},{id:'7.3',name:'Reflection'},{id:'7.4',name:'Nominalisation speech'}]},
+  ]},
+};
+
+var session=null,book=null,activeUnit=0,curIdx=-1,allTracks=[],playing=false,audioUrls={};
+var aud=document.getElementById('aud');
+var speeds=[0.75,1,1.25,1.5],spdI=1;
+
+function gs(){try{return JSON.parse(localStorage.getItem('qr_session'));}catch(e){return null;}}
+function logout(){localStorage.removeItem('qr_session');location.href='index.html';}
+function fmt(s){if(!s||isNaN(s))return'0:00';var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
+
+window.addEventListener('DOMContentLoaded',async function(){
+  session=gs();
+  var p=new URLSearchParams(location.search),bk=p.get('book'),tr=p.get('track');
+  if(!session){if(bk)localStorage.setItem('qr_redirect',location.href);document.getElementById('denied').classList.add('show');return;}
+  if(new Date(session.expiry)<new Date()){document.getElementById('denied').innerHTML='<div style="font-size:3rem;margin-bottom:16px">expired</div><h2 style="font-family:Fraunces,serif;margin-bottom:10px">Access expired</h2><p style="color:rgba(255,255,255,0.5)">Buy a new workbook from your teacher.</p>';document.getElementById('denied').classList.add('show');return;}
+  try{var r=await fetch(API+'?action=getAudio');var d=await r.json();audioUrls=d.urls||{};}catch(e){audioUrls={};}
+  document.getElementById('app').style.display='flex';
+  var lv=bk||session.level||'a0';
+  book=BOOKS[lv]||BOOKS['a0'];
+  document.getElementById('av').textContent=session.name.charAt(0).toUpperCase();
+  document.getElementById('uName').textContent=session.name;
+  document.getElementById('uBook').textContent=book.name;
+  document.getElementById('mainTitle').textContent=book.name;
+  var exp=new Date(session.expiry);
+  var dl=Math.max(0,Math.ceil((exp-new Date())/86400000));
+  document.getElementById('expDate').textContent=exp.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('expFill').style.width=Math.min(100,Math.round(dl/180*100))+'%';
+  var tot=book.units.reduce(function(a,u){return a+u.tracks.length;},0);
+  var hasUrl=book.units.reduce(function(a,u){return a+u.tracks.filter(function(t){return audioUrls[lv+'-'+t.id];}).length;},0);
+  document.getElementById('mainSub').textContent=hasUrl+' of '+tot+' tracks available';
+  buildUI(lv);
+  if(tr){var parts=tr.split('-'),ui=book.units.findIndex(function(u){return u.num===parseInt(parts[0]);});if(ui>=0){var ti=book.units[ui].tracks.findIndex(function(t){return t.id===tr;});if(ti>=0)setTimeout(function(){playTrack(ui,ti);},600);}}
+});
+
+function buildUI(lv){
+  var nav=document.getElementById('sbNav'),cnt=document.getElementById('units');
+  nav.innerHTML='<div class="nav-lbl">UNITS</div>';cnt.innerHTML='';allTracks=[];
+  book.units.forEach(function(unit,ui){
+    var btn=document.createElement('button');
+    btn.className='unit-btn'+(ui===0?' active':'');
+    btn.id='nb-'+ui;
+    btn.innerHTML='<span class="u-num" style="background:'+unit.color+'33;color:'+unit.color+';">'+unit.num+'</span>'+unit.title;
+    btn.onclick=function(){switchUnit(ui);};
+    nav.appendChild(btn);
+    var sec=document.createElement('div');
+    sec.className='unit-sec'+(ui===0?' active':'');
+    sec.id='us-'+ui;
+    var hasCnt=unit.tracks.filter(function(t){return audioUrls[lv+'-'+t.id];}).length;
+    sec.innerHTML='<div class="unit-hdr"><div class="u-dot" style="background:'+unit.color+'"></div><div><div class="u-ttl">Unit '+unit.num+' - '+unit.title+'</div><div class="u-sub">'+hasCnt+'/'+unit.tracks.length+' tracks available</div></div><span class="u-cnt">'+unit.tracks.length+' tracks</span></div><div class="tracks" id="tl-'+ui+'"></div>';
+    cnt.appendChild(sec);
+    var tl=sec.querySelector('#tl-'+ui);
+    unit.tracks.forEach(function(track,ti){
+      var url=audioUrls[lv+'-'+track.id]||'';
+      var noAudio=!url;
+      var item=document.createElement('div');
+      item.className='track-item'+(noAudio?' no-audio':'');
+      item.id='ti-'+ui+'-'+ti;
+      item.innerHTML='<button class="play-btn" id="pb-'+ui+'-'+ti+'" onclick="playTrack('+ui+','+ti+',event)">'+(noAudio?'&#9654;':'&#9654;')+'</button>'
+        +'<div class="t-info"><div class="t-num">TRACK '+track.id+'</div><div class="t-name">'+track.name+'</div>'+(noAudio?'<div class="t-nurl">No audio yet</div>':'')+'</div>'
+        +'<div class="t-prog"><div class="prog-bar" onclick="seekTrack(event,this,'+ui+','+ti+')"><div class="prog-fill" id="pf-'+ui+'-'+ti+'"></div></div><div class="t-time" id="tt-'+ui+'-'+ti+'">0:00</div></div>';
+      if(!noAudio)item.onclick=function(){playTrack(ui,ti,null);};
+      tl.appendChild(item);
+      allTracks.push({ui:ui,ti:ti,track:track,url:url});
+    });
+  });
+}
+
+function switchUnit(ui){
+  document.querySelectorAll('.unit-sec').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.unit-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('us-'+ui).classList.add('active');
+  document.getElementById('nb-'+ui).classList.add('active');
+  activeUnit=ui;
+}
+
+function playTrack(ui,ti,e){
+  if(e)e.stopPropagation();
+  var at=allTracks.find(function(t){return t.ui===ui&&t.ti===ti;});
+  if(!at||!at.url)return;
+  document.querySelectorAll('.track-item').forEach(function(el){el.classList.remove('playing');});
+  document.querySelectorAll('.play-btn').forEach(function(el){el.innerHTML='&#9654;';});
+  var item=document.getElementById('ti-'+ui+'-'+ti);
+  if(item)item.classList.add('playing');
+  var pb=document.getElementById('pb-'+ui+'-'+ti);
+  if(pb)pb.innerHTML='&#9646;&#9646;';
+  curIdx=allTracks.findIndex(function(t){return t.ui===ui&&t.ti===ti;});
+  document.getElementById('pNum').textContent='TRACK '+at.track.id;
+  document.getElementById('pName').textContent=at.track.name;
+  document.getElementById('pBar').classList.add('visible');
+  document.getElementById('mainBtn').innerHTML='&#9646;&#9646;';
+  aud.src=at.url;aud.load();aud.play().catch(function(){});playing=true;
+  if(activeUnit!==ui)switchUnit(ui);
+}
+
+function togglePlay(){
+  if(!aud.src)return;
+  if(playing){aud.pause();playing=false;document.getElementById('mainBtn').innerHTML='&#9654;';}
+  else{aud.play();playing=true;document.getElementById('mainBtn').innerHTML='&#9646;&#9646;';}
+}
+
+function skip(dir){
+  var n=curIdx+dir;
+  if(n<0||n>=allTracks.length)return;
+  var t=allTracks[n];
+  if(t.url)playTrack(t.ui,t.ti,null);
+  else skip(dir>0?dir+1:dir-1);
+}
+
+function cycleSpeed(){spdI=(spdI+1)%speeds.length;aud.playbackRate=speeds[spdI];document.getElementById('spdBtn').textContent=speeds[spdI]+'x';}
+
+function seek(e,bar){var r=bar.getBoundingClientRect(),pct=(e.clientX-r.left)/r.width;if(aud.duration)aud.currentTime=pct*aud.duration;}
+function seekTrack(e,bar,ui,ti){e.stopPropagation();seek(e,bar);}
+
+aud.addEventListener('timeupdate',function(){
+  var pct=aud.duration?(aud.currentTime/aud.duration*100):0;
+  document.getElementById('ppFill').style.width=pct+'%';
+  document.getElementById('pCur').textContent=fmt(aud.currentTime);
+  if(curIdx>=0){var t=allTracks[curIdx];var pf=document.getElementById('pf-'+t.ui+'-'+t.ti);var tt=document.getElementById('tt-'+t.ui+'-'+t.ti);if(pf)pf.style.width=pct+'%';if(tt)tt.textContent=fmt(aud.currentTime);}
+});
+aud.addEventListener('loadedmetadata',function(){document.getElementById('pTot').textContent=fmt(aud.duration);});
+aud.addEventListener('ended',function(){playing=false;document.getElementById('mainBtn').innerHTML='&#9654;';skip(1);});
+aud.addEventListener('play',function(){playing=true;document.getElementById('mainBtn').innerHTML='&#9646;&#9646;';});
+aud.addEventListener('pause',function(){playing=false;document.getElementById('mainBtn').innerHTML='&#9654;';});
+</script>
+</body>
+</html>
