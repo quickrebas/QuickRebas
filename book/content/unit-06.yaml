@@ -1,0 +1,55 @@
+unit: 6
+title: "Food & Health"
+color: "#7BA081"
+introduction: |
+  In this unit you will learn vocabulary for food and drinks,
+  and how to talk about likes and dislikes.
+
+tracks:
+  - id: "6.1"
+    name: "Food vocabulary"
+  - id: "6.2"
+    name: "Drinks"
+  - id: "6.3"
+    name: "Cafe dialogue"
+  - id: "6.4"
+    name: "Like/dislike"
+
+sections:
+  - title: "Vocabulary — Food & Drinks"
+    type: "vocab_table"
+    items:
+      - en: "bread"
+        translation: "pan"
+      - en: "chicken"
+        translation: "pollo"
+      - en: "rice"
+        translation: "arroz"
+      - en: "water"
+        translation: "agua"
+      - en: "coffee"
+        translation: "café"
+      - en: "juice"
+        translation: "zumo / jugo"
+
+  - title: "Exercise 1 — Listen and tick"
+    type: "exercise"
+    instruction: "Listen to Track 6.3 and tick the items ordered."
+    items:
+      - "☐  coffee    ☐  tea    ☐  water"
+      - "☐  sandwich  ☐  cake   ☐  salad"
+
+  - title: "Exercise 2 — Like or dislike?"
+    type: "exercise"
+    instruction: "Write sentences using 'I like' or 'I don't like'."
+    items:
+      - "pizza → _____________________________________________"
+      - "vegetables → ________________________________________"
+      - "chocolate → _________________________________________"
+
+  - title: "Grammar — Like + noun"
+    type: "info_box"
+    body: |
+      I like coffee. / I don't like tea.
+      Do you like rice? — Yes, I do. / No, I don't.
+      She likes chicken. / He doesn't like fish.

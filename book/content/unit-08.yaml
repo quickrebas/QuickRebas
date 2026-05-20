@@ -1,0 +1,62 @@
+unit: 8
+title: "Free Time"
+color: "#5A9698"
+introduction: |
+  In this unit you will learn vocabulary for hobbies and free time activities,
+  frequency adverbs, and how to use 'like + -ing'.
+
+tracks:
+  - id: "8.1"
+    name: "Hobbies"
+  - id: "8.2"
+    name: "Frequency adverbs"
+  - id: "8.3"
+    name: "Weekend dialogue"
+  - id: "8.4"
+    name: "Like + -ing"
+
+sections:
+  - title: "Vocabulary — Hobbies"
+    type: "vocab_table"
+    items:
+      - en: "read (books)"
+        translation: "leer (libros)"
+      - en: "play (football / chess)"
+        translation: "jugar (al fútbol / al ajedrez)"
+      - en: "watch (films / TV)"
+        translation: "ver (películas / televisión)"
+      - en: "listen to (music)"
+        translation: "escuchar (música)"
+      - en: "go (swimming / cycling)"
+        translation: "ir (a nadar / en bici)"
+      - en: "cook"
+        translation: "cocinar"
+
+  - title: "Vocabulary — Frequency adverbs"
+    type: "vocab_table"
+    items:
+      - en: "always"
+        translation: "siempre"
+      - en: "usually"
+        translation: "normalmente"
+      - en: "sometimes"
+        translation: "a veces"
+      - en: "rarely / hardly ever"
+        translation: "raramente / casi nunca"
+      - en: "never"
+        translation: "nunca"
+
+  - title: "Exercise 1 — How often?"
+    type: "exercise"
+    instruction: "Write true sentences about yourself using a frequency adverb."
+    items:
+      - "I ______________ play sport at the weekend."
+      - "I ______________ cook at home."
+      - "I ______________ watch films in English."
+
+  - title: "Grammar — Like + -ing"
+    type: "info_box"
+    body: |
+      I like reading. / She likes playing football.
+      I don't like cooking. / He doesn't like watching TV.
+      Do you like swimming? — Yes, I love it! / No, I hate it.

@@ -1,0 +1,68 @@
+unit: 10
+title: "Celebrations"
+color: "#8E5C9A"
+introduction: |
+  In this unit you will learn vocabulary for months, dates, and special days,
+  ordinal numbers, and how to use 'can' and 'cannot'.
+
+tracks:
+  - id: "10.1"
+    name: "Months and dates"
+  - id: "10.2"
+    name: "Ordinal numbers"
+  - id: "10.3"
+    name: "Sara's birthday"
+  - id: "10.4"
+    name: "Can/cannot"
+  - id: "10.5"
+    name: "Special days dialogue"
+
+sections:
+  - title: "Vocabulary — Months"
+    type: "vocab_table"
+    items:
+      - en: "January / February / March"
+        translation: "enero / febrero / marzo"
+      - en: "April / May / June"
+        translation: "abril / mayo / junio"
+      - en: "July / August / September"
+        translation: "julio / agosto / septiembre"
+      - en: "October / November / December"
+        translation: "octubre / noviembre / diciembre"
+
+  - title: "Vocabulary — Ordinal numbers"
+    type: "vocab_table"
+    items:
+      - en: "1st — first"
+        translation: "primero"
+      - en: "2nd — second"
+        translation: "segundo"
+      - en: "3rd — third"
+        translation: "tercero"
+      - en: "4th–20th — fourth…twentieth"
+        translation: "cuarto… vigésimo"
+      - en: "21st — twenty-first"
+        translation: "vigésimo primero"
+
+  - title: "Exercise 1 — Dates"
+    type: "exercise"
+    instruction: "Write the dates in words."
+    items:
+      - "25/12 → the _______________________ of _______________"
+      - "1/1  → the _______________________ of _______________"
+      - "14/2 → the _______________________ of _______________"
+
+  - title: "Exercise 2 — Can you…?"
+    type: "exercise"
+    instruction: "Write true sentences with 'can' or 'can't'."
+    items:
+      - "play the guitar → I ________________________________."
+      - "speak three languages → I _________________________."
+      - "swim → I _________________________________________."
+
+  - title: "Grammar — Can / Can't"
+    type: "info_box"
+    body: |
+      Can expresses ability: I can swim. / She can't drive.
+      Question: Can you cook? — Yes, I can. / No, I can't.
+      Note: 'can' never changes form — NOT 'he cans'.

@@ -1,0 +1,55 @@
+unit: 3
+title: "Around the World"
+color: "#6B9DC2"
+introduction: |
+  In this unit you will learn the names of countries and nationalities,
+  and how to use the verb 'to be' to say where you are from.
+
+tracks:
+  - id: "3.1"
+    name: "Countries"
+  - id: "3.2"
+    name: "Nationalities"
+  - id: "3.3"
+    name: "To be dialogue"
+  - id: "3.4"
+    name: "Countries pronunciation"
+  - id: "3.5"
+    name: "Where are you from?"
+
+sections:
+  - title: "Vocabulary — Countries & Nationalities"
+    type: "vocab_table"
+    items:
+      - en: "Spain / Spanish"
+        translation: "España / español/a"
+      - en: "Mexico / Mexican"
+        translation: "México / mexicano/a"
+      - en: "England / English"
+        translation: "Inglaterra / inglés/a"
+      - en: "France / French"
+        translation: "Francia / francés/a"
+      - en: "Brazil / Brazilian"
+        translation: "Brasil / brasileño/a"
+
+  - title: "Exercise 1 — Listen and write"
+    type: "exercise"
+    instruction: "Listen to Track 3.2 and write the nationality."
+    items:
+      - "1. She is from Japan. She is ________________________."
+      - "2. He is from Germany. He is _______________________."
+      - "3. They are from Argentina. They are ________________."
+
+  - title: "Exercise 2 — Write"
+    type: "exercise"
+    instruction: "Answer the questions."
+    items:
+      - "Where are you from? I am from ______________________."
+      - "What is your nationality? I am _____________________."
+
+  - title: "Grammar — Verb to be"
+    type: "info_box"
+    body: |
+      I am / You are / He is / She is / We are / They are
+      Negative: I am not (I'm not) / He is not (He isn't)
+      Question: Are you from Spain? — Yes, I am. / No, I'm not.

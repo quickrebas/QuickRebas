@@ -1,0 +1,59 @@
+unit: 4
+title: "At School"
+color: "#7BB39A"
+introduction: |
+  In this unit you will learn the names of classroom objects,
+  how to use a/an, and how to make plural nouns.
+
+tracks:
+  - id: "4.1"
+    name: "Classroom objects"
+  - id: "4.2"
+    name: "A/an"
+  - id: "4.3"
+    name: "School dialogue"
+  - id: "4.4"
+    name: "Plurals"
+  - id: "4.5"
+    name: "What is this?"
+
+sections:
+  - title: "Vocabulary — Classroom objects"
+    type: "vocab_table"
+    items:
+      - en: "a book"
+        translation: "un libro"
+      - en: "a pen / a pencil"
+        translation: "un bolígrafo / un lápiz"
+      - en: "a bag"
+        translation: "una mochila"
+      - en: "a desk"
+        translation: "un escritorio"
+      - en: "a chair"
+        translation: "una silla"
+      - en: "a board"
+        translation: "una pizarra"
+
+  - title: "Exercise 1 — A or An?"
+    type: "exercise"
+    instruction: "Write 'a' or 'an' before each word."
+    items:
+      - "1. ______ eraser"
+      - "2. ______ apple"
+      - "3. ______ umbrella"
+      - "4. ______ notebook"
+      - "5. ______ orange"
+
+  - title: "Exercise 2 — Plurals"
+    type: "exercise"
+    instruction: "Write the plural form."
+    items:
+      - "1. one book → two ___________"
+      - "2. one pencil → three ___________"
+      - "3. one class → two ___________"
+
+  - title: "Grammar — A / An"
+    type: "info_box"
+    body: |
+      Use 'a' before consonant sounds: a book, a pen, a chair.
+      Use 'an' before vowel sounds: an eraser, an apple, an umbrella.

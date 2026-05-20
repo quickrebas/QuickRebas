@@ -1,0 +1,54 @@
+unit: 2
+title: "My Family"
+color: "#7BA081"
+introduction: |
+  In this unit you will learn vocabulary for family members,
+  common adjectives to describe people, and how to use possessives.
+
+tracks:
+  - id: "2.1"
+    name: "Family members"
+  - id: "2.2"
+    name: "Adjectives"
+  - id: "2.3"
+    name: "Family dialogue"
+  - id: "2.4"
+    name: "Possessives"
+
+sections:
+  - title: "Vocabulary — Family"
+    type: "vocab_table"
+    items:
+      - en: "mother / mum"
+        translation: "madre / mamá"
+      - en: "father / dad"
+        translation: "padre / papá"
+      - en: "brother"
+        translation: "hermano"
+      - en: "sister"
+        translation: "hermana"
+      - en: "grandfather"
+        translation: "abuelo"
+      - en: "grandmother"
+        translation: "abuela"
+
+  - title: "Exercise 1 — Listen and circle"
+    type: "exercise"
+    instruction: "Listen to Track 2.1 and circle the word you hear."
+    items:
+      - "a) mother  /  father  /  sister"
+      - "b) brother  /  grandfather  /  uncle"
+      - "c) daughter  /  son  /  cousin"
+
+  - title: "Exercise 2 — Write"
+    type: "exercise"
+    instruction: "Write sentences about your family."
+    items:
+      - "My ______________ is called __________________________."
+      - "She / He is ________________________________________."
+
+  - title: "Grammar — Possessives"
+    type: "info_box"
+    body: |
+      my, your, his, her, our, their
+      Example: "This is my brother. His name is Carlos."
