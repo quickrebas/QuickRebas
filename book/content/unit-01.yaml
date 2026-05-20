@@ -1,0 +1,60 @@
+unit: 1
+title: "Me & My World"
+color: "#6B8CAE"
+introduction: |
+  In this unit you will learn to introduce yourself, say the alphabet,
+  and count from 0 to 20 in English.
+
+tracks:
+  - id: "1.1"
+    name: "Greetings"
+  - id: "1.2"
+    name: "Greeting conversations"
+  - id: "1.3"
+    name: "Numbers 0-20"
+  - id: "1.4"
+    name: "Letter dictation"
+  - id: "1.5"
+    name: "Number dictation"
+  - id: "1.6"
+    name: "Greeting dialogue"
+  - id: "1.7"
+    name: "Alphabet sounds"
+
+sections:
+  - title: "Vocabulary"
+    type: "vocab_table"
+    items:
+      - en: "Hello / Hi"
+        translation: "Hola"
+      - en: "Goodbye / Bye"
+        translation: "Adiós"
+      - en: "My name is…"
+        translation: "Me llamo…"
+      - en: "Nice to meet you"
+        translation: "Mucho gusto"
+      - en: "How are you?"
+        translation: "¿Cómo estás?"
+
+  - title: "Exercise 1 — Listen and repeat"
+    type: "exercise"
+    instruction: "Listen to Track 1.1 and repeat the greetings."
+    items:
+      - "Hello! / Hi!"
+      - "Good morning / Good afternoon / Good evening"
+      - "Goodbye! / Bye! / See you!"
+      - "How are you? — I'm fine, thanks."
+
+  - title: "Exercise 2 — Write"
+    type: "exercise"
+    instruction: "Write your answers."
+    items:
+      - "What is your name? ___________________________________"
+      - "Where are you from? _________________________________"
+      - "How are you today? __________________________________"
+
+  - title: "Did you know?"
+    type: "info_box"
+    body: |
+      In English, 'Hi' is more informal than 'Hello'. Use 'Hello' in
+      formal situations and 'Hi' with friends or classmates.

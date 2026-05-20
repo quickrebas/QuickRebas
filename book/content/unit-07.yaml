@@ -1,0 +1,57 @@
+unit: 7
+title: "Home Sweet Home"
+color: "#C97B5A"
+introduction: |
+  In this unit you will learn the names of rooms and furniture,
+  prepositions of place, and how to use 'there is' and 'there are'.
+
+tracks:
+  - id: "7.1"
+    name: "Rooms & furniture"
+  - id: "7.2"
+    name: "Prepositions"
+  - id: "7.3"
+    name: "There is/are"
+  - id: "7.4"
+    name: "House description"
+
+sections:
+  - title: "Vocabulary — Rooms & Furniture"
+    type: "vocab_table"
+    items:
+      - en: "living room"
+        translation: "salón"
+      - en: "bedroom"
+        translation: "dormitorio"
+      - en: "kitchen"
+        translation: "cocina"
+      - en: "bathroom"
+        translation: "baño"
+      - en: "sofa / couch"
+        translation: "sofá"
+      - en: "wardrobe"
+        translation: "armario"
+
+  - title: "Exercise 1 — Prepositions"
+    type: "exercise"
+    instruction: "Look at the picture and complete with on, in, under, next to, or between."
+    items:
+      - "The book is ________________ the table."
+      - "The cat is ________________ the sofa."
+      - "The lamp is ________________ the desk."
+
+  - title: "Exercise 2 — Describe your home"
+    type: "exercise"
+    instruction: "Write three sentences about your home using 'there is' or 'there are'."
+    items:
+      - "There is / are ______________________________________."
+      - "There is / are ______________________________________."
+      - "There is / are ______________________________________."
+
+  - title: "Grammar — There is / There are"
+    type: "info_box"
+    body: |
+      There is a sofa in the living room. (singular)
+      There are two bedrooms. (plural)
+      Is there a garden? — Yes, there is. / No, there isn't.
+      Are there any windows? — Yes, there are. / No, there aren't.

@@ -1,0 +1,59 @@
+unit: 5
+title: "Daily Life"
+color: "#9B7AA8"
+introduction: |
+  In this unit you will learn vocabulary for daily routines,
+  how to tell the time, and how to use the present simple tense.
+
+tracks:
+  - id: "5.1"
+    name: "Daily routine"
+  - id: "5.2"
+    name: "Telling the time"
+  - id: "5.3"
+    name: "Maya's day"
+  - id: "5.4"
+    name: "Present simple Q&A"
+  - id: "5.5"
+    name: "Time expressions"
+
+sections:
+  - title: "Vocabulary — Daily routine"
+    type: "vocab_table"
+    items:
+      - en: "wake up"
+        translation: "despertarse"
+      - en: "have breakfast"
+        translation: "desayunar"
+      - en: "go to school / work"
+        translation: "ir al colegio / trabajo"
+      - en: "have lunch"
+        translation: "almorzar"
+      - en: "do homework"
+        translation: "hacer deberes"
+      - en: "go to bed"
+        translation: "acostarse"
+
+  - title: "Exercise 1 — What time is it?"
+    type: "exercise"
+    instruction: "Listen to Track 5.2 and write the times."
+    items:
+      - "1. It is ____________________________________________."
+      - "2. It is ____________________________________________."
+      - "3. It is ____________________________________________."
+
+  - title: "Exercise 2 — Write about your day"
+    type: "exercise"
+    instruction: "Write three sentences about your daily routine."
+    items:
+      - "I wake up at ____________________ every day."
+      - "I ________________________________ at lunchtime."
+      - "At night, I ___________________________________."
+
+  - title: "Grammar — Present Simple"
+    type: "info_box"
+    body: |
+      I/You/We/They + verb: I wake up at 7 o'clock.
+      He/She/It + verb+s: She wakes up at 8 o'clock.
+      Question: What time do you wake up?
+      Negative: I don't have breakfast at school.

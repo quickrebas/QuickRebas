@@ -1,0 +1,66 @@
+unit: 9
+title: "Shopping & Style"
+color: "#C97B89"
+introduction: |
+  In this unit you will learn vocabulary for clothes and colours,
+  and how to have a shopping conversation in English.
+
+tracks:
+  - id: "9.1"
+    name: "Clothes"
+  - id: "9.2"
+    name: "Colours"
+  - id: "9.3"
+    name: "Shop conversation"
+  - id: "9.4"
+    name: "13 vs 30"
+
+sections:
+  - title: "Vocabulary — Clothes"
+    type: "vocab_table"
+    items:
+      - en: "a shirt"
+        translation: "una camisa"
+      - en: "a dress"
+        translation: "un vestido"
+      - en: "trousers / pants"
+        translation: "pantalones"
+      - en: "shoes"
+        translation: "zapatos"
+      - en: "a jacket"
+        translation: "una chaqueta"
+      - en: "a hat"
+        translation: "un sombrero"
+
+  - title: "Vocabulary — Colours"
+    type: "vocab_table"
+    items:
+      - en: "red / blue / green"
+        translation: "rojo / azul / verde"
+      - en: "yellow / orange / purple"
+        translation: "amarillo / naranja / morado"
+      - en: "white / black / grey"
+        translation: "blanco / negro / gris"
+
+  - title: "Exercise 1 — In the shop"
+    type: "exercise"
+    instruction: "Listen to Track 9.3 and answer the questions."
+    items:
+      - "What does the customer want to buy? ________________"
+      - "What colour does she choose? ______________________"
+      - "How much does it cost? £ _________________________"
+
+  - title: "Exercise 2 — Describe your outfit"
+    type: "exercise"
+    instruction: "Write sentences about what you are wearing today."
+    items:
+      - "I am wearing ________________________________________."
+      - "My _________________ is/are _________________________."
+
+  - title: "Did you know? — 13 vs 30"
+    type: "info_box"
+    body: |
+      Listen carefully to numbers ending in -teen and -ty:
+      thirTEEN (13) — stress on the last syllable
+      THIRty (30) — stress on the first syllable
+      This matters in prices and phone numbers!
